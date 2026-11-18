@@ -31,3 +31,8 @@ test("shadowPrompt and parseShadow", () => {
   assert.deepEqual(s, [{ sv: "Hej!", de: "Hallo!", tip_de: "" }]);
   assert.throws(() => parseShadow({ sentences: [] }));
 });
+
+test("hyphenated words match dictation that splits them", () => {
+  const r = compareWords("Skicka ett e-post", "skicka ett e post");
+  assert.equal(r.score, 100);
+});

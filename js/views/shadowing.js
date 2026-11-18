@@ -7,7 +7,7 @@ import { compareWords } from "../shadow.js";
 export function render(root, ctx) {
   let alive = true;
   let unsub = () => {};
-  const started = Date.now();
+  let started = Date.now();
   const box = h("div", { class: "stack" });
   root.append(box);
   pick();
@@ -17,6 +17,8 @@ export function render(root, ctx) {
   };
 
   function pick() {
+    unsub();
+    ctx.mic.stop();
     const topics = topicsFor(ctx.level);
     fill(box,
       h("div", { class: "stack" }, h("p", { class: "eyebrow" }, "Nachsprechen · Niveau " + ctx.level), h("h1", {}, "Hören, nachsprechen, vergleichen")),
@@ -38,6 +40,8 @@ export function render(root, ctx) {
   }
 
   function run(topic, sentences) {
+    started = Date.now();
+    let finished = false;
     const scores = [];
     let i = 0;
     show();
@@ -81,7 +85,7 @@ export function render(root, ctx) {
 
       const selfGrade = h("div", { class: "row", hidden: ctx.mic.available },
         h("span", { class: "small muted" }, "Wie gut ging's?"),
-        ...[["😕", 40], ["🙂", 75], ["😄", 100]].map(([e, v]) => h("button", { onclick: () => { scores[i] = v; i++; show(); } }, e)));
+        ...[["😕", 40], ["🙂", 75], ["😄", 100]].map(([e, v]) => h("button", { onclick: (ev) => { ev.currentTarget.parentElement.querySelectorAll("button").forEach((b) => (b.disabled = true)); scores[i] = v; i++; show(); } }, e)));
 
       fill(box,
         h("div", { class: "spread" }, h("span", { class: "small muted" }, `Satz ${i + 1} von ${sentences.length} · ${topic}`), h("button", { class: "ghost", onclick: pick }, "Anderes Thema")),
@@ -97,22 +101,25 @@ export function render(root, ctx) {
           h("div", { class: "row" }, ctx.mic.available && micBtn, interim),
           result,
           selfGrade,
-          h("div", { class: "row end" }, ctx.mic.available && h("button", { onclick: () => { ctx.mic.stop(); scores[i] ??= null; i++; show(); } }, "Weiter →"))));
+          h("div", { class: "row end" }, ctx.mic.available && h("button", { onclick: async (e) => { e.currentTarget.disabled = true; await ctx.mic.stop(); scores[i] ??= null; i++; show(); } }, "Weiter →"))));
       if (ctx.speech.available) ctx.speech.say(s.sv, { rate: ctx.rate });
     }
 
     async function done() {
+      if (finished) return;
+      finished = true;
+      unsub();
       const rated = scores.filter((x) => typeof x === "number");
       const avg = rated.length ? Math.round(rated.reduce((a, b) => a + b, 0) / rated.length) : 0;
       const weak = sentences.filter((_, k) => typeof scores[k] === "number" && scores[k] < 70);
-      for (const s of weak) await ctx.store.addVocab({ sv: s.sv, de: s.de, source: "nachsprechen: " + topic }, new Date()).catch(() => {});
-      await ctx.store.addSession({ date: new Date().toISOString(), minutes: Math.max(1, Math.round((Date.now() - started) / 60000)), kind: "speaking", topic, summary_de: rated.length ? `Ø ${avg} % verständlich` : "Nachgesprochen" }).catch(() => {});
-      ctx.refreshHeader();
-      if (!alive) return;
-      fill(box, h("section", { class: "card flash" },
+      const minutes = Math.max(1, Math.round((Date.now() - started) / 60000));
+      if (alive) fill(box, h("section", { class: "card flash" },
         h("p", { class: "big-sv" }, rated.length ? `Ø ${avg} %` : "Klart!"),
         h("p", {}, weak.length ? `${weak.length} ${weak.length === 1 ? "Satz kommt" : "Sätze kommen"} zum Üben in deine Wiederholung.` : "Super – alles gut verständlich."),
         h("div", { class: "row" }, h("button", { class: "primary", onclick: pick }, "Neue Sätze"), h("button", { onclick: () => ctx.go("today") }, "Zur Übersicht"))));
+      for (const s of weak) await ctx.store.addVocab({ sv: s.sv, de: s.de, source: "nachsprechen: " + topic }, new Date()).catch(() => {});
+      await ctx.store.addSession({ date: new Date().toISOString(), minutes, kind: "speaking", topic, summary_de: rated.length ? `Ø ${avg} % verständlich` : "Nachgesprochen" }).catch(() => {});
+      ctx.refreshHeader();
     }
   }
 }

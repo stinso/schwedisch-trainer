@@ -126,3 +126,9 @@ test("grammar returns a parsed lesson", async () => {
   const g = await createAI(s).grammar("A1", { wrong: "x", right: "y" });
   assert.equal(g.exercises[0].answer_sv, "b");
 });
+
+test("grammar is uncached so a retry after a parse error really asks again", async () => {
+  const s = fakeSample({ json: { title_de: "t", lesson_de: "l", exercises: [{ prompt_de: "a", answer_sv: "b" }] } });
+  await createAI(s).grammar("A1", { wrong: "x", right: "y" });
+  assert.equal(s.calls[0].opts.cache, false);
+});

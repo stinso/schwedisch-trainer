@@ -102,7 +102,7 @@ export function evaluationPrompt(level, topic, history, mission = null) {
     `- "phrases": 2–4 nützliche, natürlichere Formulierungen für das, was der Lernende sagen wollte: "sv" und "de".`,
     ...(mission ? [`- "goal_reached": true/false – hat der Lernende die Aufgabe "${mission.goal_de}" erledigt? Erwähne das Ergebnis auch in summary_de.`] : []),
     `- "vocab": 3–8 Wörter, die dem Lernenden gefehlt haben oder für das Thema wichtig sind (Grundform, bei Substantiven mit en/ett): "sv" und "de".`,
-    jsonOnly(`{"summary_de": "...", "mistakes": [{"wrong": "jag gå", "right": "jag gick", "rule_de": "..."}], "phrases": [{"sv": "...", "de": "..."}], "vocab": [{"sv": "en strand", "de": "Strand"}]}`),
+    jsonOnly(`{${mission ? `"goal_reached": true, ` : ""}"summary_de": "...", "mistakes": [{"wrong": "jag gå", "right": "jag gick", "rule_de": "..."}], "phrases": [{"sv": "...", "de": "..."}], "vocab": [{"sv": "en strand", "de": "Strand"}]}`),
   ].join("\n");
 }
 
@@ -243,6 +243,7 @@ export function shadowPrompt(level, topic) {
   return [
     `Erstelle 6 schwedische Sätze zum Nachsprechen für deutschsprachige Lernende auf Niveau ${level} (${LEVEL_HINT[level] || LEVEL_HINT.A1}), Thema "${topic}".`,
     `Alltagsnah und natürlich, aufsteigend von kurz zu etwas länger. Achte auf typische Ausspracheschwierigkeiten (sj-Laut, tj/k vor hellen Vokalen, langes/kurzes a, å/ä/ö, stumme Buchstaben wie in "och", "jag", "de").`,
+    `Schreibe Zahlen als Wörter, keine Ziffern (z. B. "tjugofem", nicht "25"), und vermeide Abkürzungen.`,
     `"tip_de": ein kurzer Aussprachetipp auf Deutsch zu einem Wort im Satz (z. B. "sju klingt etwa wie ‚chü‘"), oder leer.`,
     jsonOnly(`{"sentences": [{"sv": "Jag heter Anna.", "de": "Ich heiße Anna.", "tip_de": "jag spricht man ‚ja‘"}]}`),
   ].join("\n");

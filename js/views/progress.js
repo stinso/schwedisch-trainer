@@ -67,20 +67,28 @@ export function render(root, ctx) {
     const search = h("input", { type: "text", id: "wordbook-search", placeholder: "Suchen (Schwedisch oder Deutsch) …" });
     const list = h("ul", { class: "list" });
     const LIMIT = 50;
+    const deleting = new Set();
+    const countEl = h("span", { class: "small muted" });
     const draw = () => {
+      countEl.textContent = sorted.length + " Einträge";
       const q = search.value.trim().toLowerCase();
       const hits = sorted.filter((v) => !q || String(v.sv).toLowerCase().includes(q) || String(v.de).toLowerCase().includes(q));
       fill(list,
         hits.slice(0, LIMIT).map((v) => {
-          const del = h("button", { class: "icon ghost", title: "Entfernen", "aria-label": "Entfernen", onclick: async () => {
+          const del = h("button", { class: "icon ghost", title: "Entfernen", "aria-label": "Entfernen", disabled: deleting.has(v), onclick: async () => {
+            if (deleting.has(v)) return;
+            deleting.add(v);
             del.disabled = true;
             try {
               await ctx.store.deleteItem(v);
-              sorted.splice(sorted.indexOf(v), 1);
+              const k = sorted.indexOf(v);
+              if (k >= 0) sorted.splice(k, 1);
               draw();
             } catch {
               del.disabled = false;
               toast("Löschen hat nicht geklappt.");
+            } finally {
+              deleting.delete(v);
             }
           } }, "✕");
           return h("li", {},
@@ -95,7 +103,7 @@ export function render(root, ctx) {
     search.addEventListener("input", draw);
     draw();
     return h("section", { class: "card" },
-      h("div", { class: "spread" }, h("h3", {}, "📖 Dein Wortschatz"), h("span", { class: "small muted" }, sorted.length + " Einträge")),
+      h("div", { class: "spread" }, h("h3", {}, "📖 Dein Wortschatz"), countEl),
       search, list);
   }
 }

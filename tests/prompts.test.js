@@ -166,7 +166,7 @@ test("evaluationPrompt with mission asks for goal_reached; parser keeps it", () 
   assert.equal(parseEvaluation({ summary_de: "s" }).goal_reached, null);
 });
 
-import { grammarPrompt, parseGrammar } from "../js/prompts.js";
+import { grammarPrompt, parseGrammar, shadowPrompt } from "../js/prompts.js";
 
 test("grammarPrompt names the mistake and level", () => {
   const p = grammarPrompt("A2", { wrong: "jag gå igår", right: "jag gick igår", rule_de: "Präteritum" });
@@ -185,4 +185,14 @@ test("parseGrammar requires explanation and exercises", () => {
   assert.equal(g.exercises.length, 1);
   assert.throws(() => parseGrammar({ lesson_de: "x", exercises: [] }), ParseError);
   assert.throws(() => parseGrammar({ exercises: [{ prompt_de: "a", answer_sv: "b" }] }), ParseError);
+});
+
+test("evaluation JSON example includes goal_reached only with a mission", () => {
+  const h = [{ role: "user", content: "x" }];
+  assert.match(evaluationPrompt("A1", "t", h, { goal_de: "g" }), /\{"goal_reached": true/);
+  assert.doesNotMatch(evaluationPrompt("A1", "t", h), /"goal_reached"/);
+});
+
+test("shadowPrompt asks for numbers written as words", () => {
+  assert.match(shadowPrompt("A1", "x"), /Ziffern/);
 });

@@ -5,7 +5,7 @@ import { aiErrorMessage } from "../ai.js";
 // Grammar mini-lesson built from one of the learner's own recurring mistakes.
 export function render(root, ctx, params = {}) {
   let alive = true;
-  const started = Date.now();
+  let started = Date.now();
   const box = h("div", { class: "stack" });
   root.append(box);
   if (params.mistake) lesson(params.mistake);
@@ -53,6 +53,8 @@ export function render(root, ctx, params = {}) {
   }
 
   function practice(mistake, g) {
+    started = Date.now();
+    let finished = false;
     let i = 0;
     let right = 0;
     next();
@@ -71,25 +73,35 @@ export function render(root, ctx, params = {}) {
         if (busy || settled) return;
         busy = true;
         const ans = await readAnswer(ctx.mic, field.input);
+        if (!ans) {
+          busy = false;
+          field.focus();
+          fill(result, h("p", { class: "small muted" }, "Schreib oder sprich zuerst deine Antwort."));
+          return;
+        }
         let ok = localMatch(ans, ex.answer_sv);
         let feedback = "";
-        if (!ok && ans && ctx.ai.available) {
+        let canOverride = !ok;
+        if (!ok && ctx.ai.available) {
           fill(result, thinking("Prüfe"));
           try {
             const r = await ctx.ai.checkReview({ prompt_de: "Übersetze: " + ex.prompt_de, answer_sv: ex.answer_sv }, ans);
             ok = r.correct;
             feedback = r.feedback_de;
           } catch (e) {
-            feedback = aiErrorMessage(e);
+            feedback = aiErrorMessage(e) + " Vergleiche selbst mit der Lösung.";
           }
         }
+        if (!alive) return;
         settled = true;
         if (ok) right++;
         checkBtn.hidden = true;
         fill(result,
           h("div", { class: "row" }, h("span", { class: "pill " + (ok ? "good" : "bad") }, ok ? "Richtig!" : "Nicht ganz"), feedback && h("span", {}, feedback)),
           !ok && h("div", { class: "row" }, h("span", { class: "small muted" }, "Lösung:"), h("strong", { class: "sv", lang: "sv" }, ex.answer_sv), speakButton(ctx.speech, ex.answer_sv, { rate: () => ctx.rate })),
-          h("div", { class: "row end" }, h("button", { class: "primary", onclick: () => { i++; next(); } }, i + 1 < g.exercises.length ? "Weiter" : "Fertig")));
+          h("div", { class: "row end" },
+            !ok && canOverride && h("button", { class: "ghost", onclick: (e) => { e.currentTarget.disabled = true; right++; i++; next(); } }, "Ich hatte doch recht"),
+            h("button", { class: "primary", onclick: (e) => { e.currentTarget.disabled = true; i++; next(); } }, i + 1 < g.exercises.length ? "Weiter" : "Fertig")));
         if (ok && ctx.speech.available) ctx.speech.say(ex.answer_sv, { rate: ctx.rate });
       }
 
@@ -105,15 +117,17 @@ export function render(root, ctx, params = {}) {
     }
 
     async function done() {
+      if (finished) return;
+      finished = true;
       const passed = right / g.exercises.length >= 0.8;
-      if (mistake.id) await ctx.store.saveReview(mistake, passed, new Date()).catch(() => {});
-      await ctx.store.addSession({ date: new Date().toISOString(), minutes: Math.max(1, Math.round((Date.now() - started) / 60000)), kind: "grammar", topic: g.title_de, summary_de: `${right}/${g.exercises.length} richtig` }).catch(() => {});
-      ctx.refreshHeader();
-      if (!alive) return;
-      fill(box, h("section", { class: "card flash" },
+      const minutes = Math.max(1, Math.round((Date.now() - started) / 60000));
+      if (alive) fill(box, h("section", { class: "card flash" },
         h("p", { class: "big-sv" }, passed ? "Regel sitzt! 🌟" : "Weiter dranbleiben 💪"),
         h("p", {}, `${right} von ${g.exercises.length} richtig.` + (passed ? "" : " Der Fehler bleibt in deiner Wiederholung.")),
         h("div", { class: "row" }, h("button", { class: "primary", onclick: choose }, "Nächste Regel"), h("button", { onclick: () => ctx.go("today") }, "Zur Übersicht"))));
+      if (mistake.id) await ctx.store.saveReview(mistake, passed, new Date()).catch(() => {});
+      await ctx.store.addSession({ date: new Date().toISOString(), minutes, kind: "grammar", topic: g.title_de, summary_de: `${right}/${g.exercises.length} richtig` }).catch(() => {});
+      ctx.refreshHeader();
     }
   }
 }
