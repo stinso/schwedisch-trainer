@@ -5,7 +5,7 @@ const KIND = { conversation: "Gespräch", listening: "Hörübung", review: "Wied
 
 export function render(root, ctx) {
   const body = h("div", { class: "stack" }, h("div", { class: "card" }, thinking("Lade deinen Fortschritt")));
-  root.append(h("h1", {}, "Fortschritt"), body);
+  root.append(h("h1", {}, "Fortschritt"), body, voiceCheck());
   let alive = true;
   load().catch(() => alive && fill(body, h("div", { class: "note err" }, "Konnte den Fortschritt nicht laden.")));
   return () => (alive = false);
@@ -105,5 +105,18 @@ export function render(root, ctx) {
     return h("section", { class: "card" },
       h("div", { class: "spread" }, h("h3", {}, "📖 Dein Wortschatz"), countEl),
       search, list);
+  }
+
+  // Small diagnostic: which languages the read-aloud offers, and how each voice sounds.
+  function voiceCheck() {
+    const sv = "Hej! Jag heter Astrid och jag bor i Göteborg. Sju sjösjuka sjömän.";
+    const langs = ctx.ttsLanguages;
+    return h("details", { class: "card needs-speech" },
+      h("summary", {}, "🔧 Sprachausgabe testen"),
+      h("p", { class: "small muted" }, "Vom System angebotene Sprachen: " + (langs ? langs.join(", ") || "keine" : "nicht abfragbar")),
+      h("div", { class: "row" },
+        h("button", { class: "speak", onclick: () => ctx.speech.say(sv) }, "🔊 Standardstimme"),
+        h("button", { class: "speak", onclick: () => ctx.speech.say([{ speaker: "A", sv }]) }, "🔊 Dialogstimme A"),
+        h("button", { class: "speak", onclick: () => ctx.speech.say([{ speaker: "B", sv }]) }, "🔊 Dialogstimme B")));
   }
 }

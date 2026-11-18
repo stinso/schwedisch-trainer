@@ -145,6 +145,7 @@ async function boot() {
   // Swedish voice check: if the platform lists languages and Swedish is missing, say so once.
   try {
     const langs = await tts?.languages?.();
+    ctx.ttsLanguages = Array.isArray(langs) ? langs : null;
     if (Array.isArray(langs) && !langs.some((l) => l.toLowerCase().startsWith("sv"))) {
       ctx.speechNoSwedish = true;
     }
