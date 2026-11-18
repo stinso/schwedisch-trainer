@@ -238,3 +238,28 @@ test("parseCorrection keeps a note about misheard words", () => {
   assert.equal(c.heard_de, "„I“ wurde erkannt – gemeint war wohl „jag“.");
   assert.equal(parseCorrection({ ok: true, corrected: "Hej" }).heard_de, "");
 });
+
+import { discussInput, describeItem } from "../js/prompts.js";
+
+test("describeItem names mistakes, phrases and words", () => {
+  assert.match(describeItem({ kind: "mistake", wrong: "jag gå", right: "jag gick", rule_de: "Präteritum" }), /jag gå.*jag gick.*Präteritum/);
+  assert.match(describeItem({ kind: "phrase", sv: "Det var kul", de: "Das war lustig" }), /Det var kul/);
+  assert.match(describeItem({ kind: "vocab", sv: "en strand", de: "Strand" }), /en strand/);
+});
+
+test("discussInput: first open asks for a deeper explanation, with the conversation as context", () => {
+  const hist = [{ role: "assistant", content: "Vad gjorde du?" }, { role: "user", content: "Jag gå till stranden" }];
+  const m = discussInput("B1", "Sommer", hist, { kind: "mistake", wrong: "jag gå", right: "jag gick", rule_de: "" }, []);
+  assert.equal(m.length, 1);
+  assert.equal(m[0].role, "user");
+  assert.match(m[0].content, /Jag gå till stranden/);
+  assert.match(m[0].content, /jag gick/);
+  assert.match(m[0].content, /Deutsch/);
+});
+
+test("discussInput: follow-up questions alternate and end on the learner's question", () => {
+  const item = { kind: "vocab", sv: "en strand", de: "Strand" };
+  const m = discussInput("B1", "Sommer", [], item, [{ q: "", a: "Strand = en strand." }, { q: "Plural?", a: "" }]);
+  assert.deepEqual(m.map((x) => x.role), ["user", "assistant", "user"]);
+  assert.equal(m[2].content, "Plural?");
+});

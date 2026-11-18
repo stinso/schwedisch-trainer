@@ -321,3 +321,29 @@ export function parseExplain(v, phrase) {
   need(de, "explain: de missing");
   return { phrase, base_sv: str(v.base_sv) || phrase, de, note_de: str(v.note_de) };
 }
+
+// ---------- Ask about one point of the evaluation ----------
+
+export function describeItem(item) {
+  if (item.kind === "mistake") return `Fehler: "${item.wrong}" → richtig: "${item.right}"${item.rule_de ? ` (Regel: ${item.rule_de})` : ""}`;
+  if (item.kind === "phrase") return `Natürlichere Formulierung: "${item.sv}" (${item.de})`;
+  return `Neues Wort: "${item.sv}" (${item.de})`;
+}
+
+export function discussInput(level, topic, history, item, qa) {
+  const intro = [
+    `Du bist ein geduldiger Schwedischlehrer für einen deutschsprachigen Lernenden (Niveau ${level}).`,
+    `Er hat ein Übungsgespräch zum Thema "${topic}" geführt und schaut sich in der Auswertung diesen Punkt an:`,
+    describeItem(item),
+    ...(history.length ? [``, `Das Gespräch (Sätze des Lernenden evtl. aus Spracherkennung):`, transcript(trimHistory(history, 30))] : []),
+    ``,
+    `Antworte auf Deutsch, kurz und konkret (höchstens ca. 120 Wörter), schwedische Beispiele in Anführungszeichen mit deutscher Übersetzung. Kein Markdown, keine Überschriften, keine Aufzählungszeichen.`,
+  ];
+  const first = qa[0]?.q || `Erkläre diesen Punkt genauer: warum es so ist, wie man es sich merkt, und gib 2 kurze Beispielsätze.`;
+  const msgs = [{ role: "user", content: intro.join("\n") + "\n\n" + first }];
+  qa.forEach((t, i) => {
+    if (i > 0) msgs.push({ role: "user", content: t.q });
+    if (t.a) msgs.push({ role: "assistant", content: t.a });
+  });
+  return msgs;
+}

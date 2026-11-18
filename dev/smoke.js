@@ -76,6 +76,15 @@ async function steps() {
   await click("Beenden & auswerten");
   await wait(500);
   log.push("evaluation: " + text());
+  // open one point, read the explanation, ask a follow-up
+  const det = $("details.ask");
+  det.open = true;
+  await wait(300);
+  det.querySelector("input").value = "Warum?";
+  det.querySelector("form").requestSubmit();
+  await wait(300);
+  log.push("ask: " + [...det.querySelectorAll(".ask-q, .ask-a")].map((e) => e.className + "=" + e.textContent.slice(0, 30)).join(" | ") + " | panels=" + document.querySelectorAll("details.ask").length);
+  if (location.search.includes("shot=ask")) throw new Error("STOP");
   await click("Jetzt wiederholen");
   await wait(400);
   log.push("review: " + text());

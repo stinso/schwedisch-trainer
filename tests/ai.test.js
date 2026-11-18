@@ -140,3 +140,12 @@ test("translate and explain run on the quick tier", async () => {
   assert.equal((await ai.explain("B1", "tycker", "Vad tycker du?")).base_sv, "tycka");
   assert.deepEqual(s.calls.map((c) => c.opts.modelTier), ["quick", "quick"]);
 });
+
+test("discuss streams a German answer, uncached", async () => {
+  const s = fakeSample({ text: "Weil gå unregelmäßig ist." });
+  const got = [];
+  const a = await createAI(s).discuss("B1", "Sommer", [], { kind: "vocab", sv: "en strand", de: "Strand" }, [], { onText: ({ text }) => got.push(text) });
+  assert.equal(a, "Weil gå unregelmäßig ist.");
+  assert.equal(s.calls[0].opts.cache, false);
+  assert.equal(got.length, 1);
+});

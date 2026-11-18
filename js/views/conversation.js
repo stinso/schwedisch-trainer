@@ -2,6 +2,7 @@ import { h, fill, thinking, errorBox, answerField, speakButton, rateSelect, fmtM
 import { accumulate, MAX_GAP_MS } from "../time.js";
 import { topicsFor, missionsFor } from "../level.js";
 import { glossable } from "../gloss.js";
+import { askPanel } from "../ask.js";
 import { aiErrorMessage } from "../ai.js";
 
 const SOFT_LIMIT_MS = 10 * 60 * 1000;
@@ -310,6 +311,8 @@ export function render(root, ctx, params = {}) {
 
   function showEvaluation(ev) {
     const say = (sv) => speakButton(ctx.speech, sv, { rate: () => ctx.rate });
+    const history = JSON.parse(JSON.stringify(state.history));
+    const ask = (item) => askPanel(ctx, { topic: state.topic, history, item });
     fill(box, 
       h("div", { class: "stack" }, h("p", { class: "eyebrow" }, "Auswertung · " + state.topic), h("h1", {}, "Bra jobbat!")),
       h("section", { class: "card" },
@@ -318,13 +321,13 @@ export function render(root, ctx, params = {}) {
       ev.mistakes.length > 0 && h("section", { class: "card" },
         h("h3", {}, "Deine wichtigsten Fehler"),
         h("ul", { class: "list" }, ev.mistakes.map((m) =>
-          h("li", {}, h("span", {}, h("span", { class: "wrong", lang: "sv" }, m.wrong), " → ", h("span", { class: "right-txt", lang: "sv" }, m.right), " ", say(m.right)), m.rule_de && h("span", { class: "small muted" }, m.rule_de))))),
+          h("li", {}, h("span", {}, h("span", { class: "wrong", lang: "sv" }, m.wrong), " → ", h("span", { class: "right-txt", lang: "sv" }, m.right), " ", say(m.right)), m.rule_de && h("span", { class: "small muted" }, m.rule_de), ask({ kind: "mistake", ...m }))))),
       ev.phrases.length > 0 && h("section", { class: "card" },
         h("h3", {}, "So klingt es natürlicher"),
-        h("ul", { class: "list" }, ev.phrases.map((p) => h("li", {}, h("span", { class: "sv", lang: "sv" }, p.sv, " ", say(p.sv)), h("span", { class: "small muted" }, p.de))))),
+        h("ul", { class: "list" }, ev.phrases.map((p) => h("li", {}, h("span", { class: "sv", lang: "sv" }, p.sv, " ", say(p.sv)), h("span", { class: "small muted" }, p.de), ask({ kind: "phrase", ...p }))))),
       ev.vocab.length > 0 && h("section", { class: "card" },
         h("h3", {}, "Neue Wörter"),
-        h("ul", { class: "list" }, ev.vocab.map((v) => h("li", {}, h("div", { class: "spread" }, h("span", { class: "sv", lang: "sv" }, v.sv), say(v.sv)), h("span", { class: "small muted" }, v.de))))),
+        h("ul", { class: "list" }, ev.vocab.map((v) => h("li", {}, h("div", { class: "spread" }, h("span", { class: "sv", lang: "sv" }, v.sv), say(v.sv)), h("span", { class: "small muted" }, v.de), ask({ kind: "vocab", ...v }))))),
       h("p", { class: "muted small" }, "Fehler, Wendungen und Wörter sind jetzt in deiner Wiederholung."),
       h("div", { class: "row" },
         h("button", { class: "primary", onclick: () => ctx.go("review") }, "Jetzt wiederholen"),

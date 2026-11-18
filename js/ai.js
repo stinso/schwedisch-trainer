@@ -42,6 +42,10 @@ export function createAI(sample) {
 
     howToSay: (level, topic, de) =>
       json(P.howToSayPrompt(level, topic, de), { modelTier: "quick" }, P.parseHowToSay),
+    async discuss(level, topic, history, item, qa, { onText, signal } = {}) {
+      const { text } = await sample(P.discussInput(level, topic, history, item, qa), { modelTier: "default", cache: false, onText, signal });
+      return text.trim();
+    },
     translate: (level, sv) => json(P.translatePrompt(level, sv), { modelTier: "quick" }, P.parseTranslate),
     explain: (level, phrase, sentence) =>
       json(P.explainPrompt(level, phrase, sentence), { modelTier: "quick" }, (v) => P.parseExplain(v, phrase)),

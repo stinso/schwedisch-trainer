@@ -151,6 +151,14 @@ body[data-nospeech] .hidden-text { filter: none; user-select: auto; }
 .gloss { border-top: 1px dashed var(--line); padding-top: 8px; display: grid; gap: 8px; font-size: 0.92rem; }
 .gloss-word { display: grid; gap: 4px; padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); }
 .gloss-word .row button { padding: 4px 8px; font-size: 0.85rem; }
+details.ask { margin-top: 2px; }
+details.ask summary { cursor: pointer; color: var(--accent); font-size: 0.85rem; width: fit-content; padding: 2px 0; }
+details.ask[open] summary { margin-bottom: 6px; }
+.ask-thread { display: grid; gap: 8px; }
+.ask-a { margin: 0; padding: 8px 12px; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line); white-space: pre-wrap; font-size: 0.92rem; }
+.ask-q { margin: 0; justify-self: end; max-width: 85%; padding: 6px 12px; border-radius: 12px; background: var(--accent-soft); font-size: 0.92rem; }
+.ask-form { display: flex; gap: 6px; margin-top: 8px; }
+.ask-form input { flex: 1; min-width: 0; }
 .fix { border-top: 1px dashed var(--line); padding-top: 8px; display: grid; gap: 4px; font-size: 0.92rem; }
 .fix .right { color: var(--good); font-weight: 600; }
 .composer { position: sticky; bottom: 0; background: var(--bg); padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); display: grid; gap: 8px; }
