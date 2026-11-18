@@ -1,6 +1,7 @@
 import { h, fill, thinking, errorBox, answerField, speakButton, rateSelect, fmtMin, toast, readAnswer } from "../ui.js";
 import { accumulate, MAX_GAP_MS } from "../time.js";
 import { topicsFor, missionsFor } from "../level.js";
+import { glossable } from "../gloss.js";
 import { aiErrorMessage } from "../ai.js";
 
 const SOFT_LIMIT_MS = 10 * 60 * 1000;
@@ -115,6 +116,7 @@ export function render(root, ctx, params = {}) {
       state.mission && h("div", { class: "note" }, h("strong", {}, "🎯 Deine Aufgabe: "), state.mission.goal_de, h("br"), h("span", { class: "small muted" }, "Claude spielt: " + state.mission.role_de)),
       h("div", { class: "row" }, listenBtn, autoBtn, rateSelect(() => ctx.rate, (r) => ctx.setRate(r))),
       softNote,
+      h("p", { class: "small muted" }, "Tipp: Wort in Claudes Antwort anklicken (oder mehrere markieren) für Erklärung, DE übersetzt alles."),
       chatEl,
       composer
     );
@@ -136,8 +138,10 @@ export function render(root, ctx, params = {}) {
   }
 
   function themBubble(text) {
-    const say = h("p", { class: "sv say" + (listenMode ? " hidden-text" : ""), lang: "sv", onclick: (e) => e.currentTarget.classList.remove("hidden-text") }, text);
-    return h("div", { class: "bubble them" }, say, h("div", { class: "tools" }, speakButton(ctx.speech, () => say.textContent, { rate: () => ctx.rate })));
+    const g = glossable(ctx, text, { className: "sv say" + (listenMode ? " hidden-text" : ""), source: "gespräch: " + state.topic });
+    const say = g.text;
+    say.addEventListener("click", (e) => e.currentTarget.classList.remove("hidden-text"));
+    return h("div", { class: "bubble them" }, say, g.panel, h("div", { class: "tools" }, g.translateBtn, speakButton(ctx.speech, () => say.textContent, { rate: () => ctx.rate })));
   }
 
   function meBubble(text, idx) {

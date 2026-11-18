@@ -196,3 +196,32 @@ test("evaluation JSON example includes goal_reached only with a mission", () => 
 test("shadowPrompt asks for numbers written as words", () => {
   assert.match(shadowPrompt("A1", "x"), /Ziffern/);
 });
+
+import { translatePrompt, parseTranslate, explainPrompt, parseExplain } from "../js/prompts.js";
+
+test("translate prompt carries the Swedish text and asks for German", () => {
+  const p = translatePrompt("B1", "Vad tycker du om det?");
+  assert.match(p, /Vad tycker du om det\?/);
+  assert.match(p, /Deutsch/);
+});
+
+test("parseTranslate requires de", () => {
+  assert.deepEqual(parseTranslate({ de: "Was hältst du davon?" }), { de: "Was hältst du davon?" });
+  assert.throws(() => parseTranslate({}), ParseError);
+});
+
+test("explain prompt names the phrase, its sentence and the level", () => {
+  const p = explainPrompt("B1", "tycker", "Vad tycker du om det?");
+  assert.match(p, /"tycker"/);
+  assert.match(p, /Vad tycker du om det\?/);
+  assert.match(p, /B1/);
+});
+
+test("parseExplain requires de and falls back to the clicked phrase", () => {
+  assert.deepEqual(
+    parseExplain({ base_sv: "tycka", de: "meinen, finden", note_de: "tycka om = mögen" }, "tycker"),
+    { phrase: "tycker", base_sv: "tycka", de: "meinen, finden", note_de: "tycka om = mögen" }
+  );
+  assert.equal(parseExplain({ de: "finden" }, "tycker").base_sv, "tycker");
+  assert.throws(() => parseExplain({ note_de: "x" }, "tycker"), ParseError);
+});

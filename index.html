@@ -144,6 +144,13 @@ body[data-nospeech] .hidden-text { filter: none; user-select: auto; }
 .bubble .tools { display: flex; gap: 2px; justify-content: flex-end; margin: -4px -6px -6px 0; }
 .bubble .tools button { padding: 4px 8px; font-size: 0.85rem; border: none; background: transparent; color: var(--muted); }
 .bubble .tools button:hover { color: var(--fg); }
+.glossable .w { cursor: pointer; border-radius: 4px; transition: background .12s; }
+.glossable .w:hover { background: var(--accent-soft); }
+.glossable .w.on { background: var(--sun-soft); box-shadow: 0 0 0 2px var(--sun-soft); }
+.glossable.hidden-text .w { cursor: inherit; }
+.gloss { border-top: 1px dashed var(--line); padding-top: 8px; display: grid; gap: 8px; font-size: 0.92rem; }
+.gloss-word { display: grid; gap: 4px; padding: 8px 10px; border-radius: var(--r-sm); background: var(--surface-2); }
+.gloss-word .row button { padding: 4px 8px; font-size: 0.85rem; }
 .fix { border-top: 1px dashed var(--line); padding-top: 8px; display: grid; gap: 4px; font-size: 0.92rem; }
 .fix .right { color: var(--good); font-weight: 600; }
 .composer { position: sticky; bottom: 0; background: var(--bg); padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); display: grid; gap: 8px; }

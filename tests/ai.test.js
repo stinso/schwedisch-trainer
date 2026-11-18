@@ -132,3 +132,11 @@ test("grammar is uncached so a retry after a parse error really asks again", asy
   await createAI(s).grammar("A1", { wrong: "x", right: "y" });
   assert.equal(s.calls[0].opts.cache, false);
 });
+
+test("translate and explain run on the quick tier", async () => {
+  const s = fakeSample({ json: (input) => (input.includes("Übersetze") ? { de: "Was meinst du?" } : { base_sv: "tycka", de: "meinen" }) });
+  const ai = createAI(s);
+  assert.equal((await ai.translate("B1", "Vad tycker du?")).de, "Was meinst du?");
+  assert.equal((await ai.explain("B1", "tycker", "Vad tycker du?")).base_sv, "tycka");
+  assert.deepEqual(s.calls.map((c) => c.opts.modelTier), ["quick", "quick"]);
+});

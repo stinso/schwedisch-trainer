@@ -283,3 +283,39 @@ export function parseGrammar(v) {
   need(exercises.length > 0, "grammar: no exercises");
   return { title_de: str(v.title_de), lesson_de, examples: pairs(v.examples, "sv", "de"), exercises };
 }
+
+// ---------- Translate a whole message / explain a word or phrase ----------
+
+export function translatePrompt(level, sv) {
+  return [
+    `Übersetze diesen schwedischen Text für einen deutschsprachigen Lernenden (Niveau ${level}) natürlich ins Deutsche:`,
+    `"${sv}"`,
+    jsonOnly(`{"de": "Was hast du am Wochenende gemacht?"}`),
+  ].join("\n");
+}
+
+export function parseTranslate(v) {
+  need(isObj(v), "translate: not an object");
+  const de = str(v.de);
+  need(de, "translate: de missing");
+  return { de };
+}
+
+export function explainPrompt(level, phrase, sentence) {
+  return [
+    `Ein deutschsprachiger Schwedisch-Lernender (Niveau ${level}) liest den Satz:`,
+    `"${sentence}"`,
+    `und möchte wissen, was "${phrase}" hier bedeutet.`,
+    `"base_sv": Grundform (Verb im Infinitiv, Substantiv im Singular unbestimmt mit en/ett, sonst wie im Text).`,
+    `"de": deutsche Bedeutung in genau diesem Satz (kurz, 1–4 Wörter).`,
+    `"note_de": 1 kurzer Satz auf Deutsch: Form im Satz, feste Wendung oder Besonderheit – oder leer.`,
+    jsonOnly(`{"base_sv": "tycka", "de": "meinen, finden", "note_de": "tycker = Präsens; tycka om = mögen"}`),
+  ].join("\n");
+}
+
+export function parseExplain(v, phrase) {
+  need(isObj(v), "explain: not an object");
+  const de = str(v.de);
+  need(de, "explain: de missing");
+  return { phrase, base_sv: str(v.base_sv) || phrase, de, note_de: str(v.note_de) };
+}

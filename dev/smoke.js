@@ -46,6 +46,13 @@ async function steps() {
   await click("✏️");
   await wait(300);
   log.push("fix: " + ($(".fix")?.innerText.replace(/\s+/g, " ") || "none"));
+  // click a word in Claude's reply, then translate the whole reply
+  [...document.querySelectorAll(".bubble.them .w")].find((w) => w.textContent === "gjorde")?.click();
+  await wait(300);
+  log.push("word: " + ($(".gloss-word")?.innerText.replace(/\s+/g, " ") || "none"));
+  [...document.querySelectorAll(".bubble.them .tools button")].find((b) => b.textContent === "DE")?.click();
+  await wait(300);
+  log.push("translate: " + ($(".gloss-tr")?.innerText.replace(/\s+/g, " ") || "none") + " | said=" + JSON.stringify($(".bubble.them .say")?.textContent));
   // mic still on when sending: last phrase must be included
   $("#view textarea").value = "Jag bor i Berlin";
   await click("Sprechen");

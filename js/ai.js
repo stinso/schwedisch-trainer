@@ -42,6 +42,9 @@ export function createAI(sample) {
 
     howToSay: (level, topic, de) =>
       json(P.howToSayPrompt(level, topic, de), { modelTier: "quick" }, P.parseHowToSay),
+    translate: (level, sv) => json(P.translatePrompt(level, sv), { modelTier: "quick" }, P.parseTranslate),
+    explain: (level, phrase, sentence) =>
+      json(P.explainPrompt(level, phrase, sentence), { modelTier: "quick" }, (v) => P.parseExplain(v, phrase)),
   };
 }
 

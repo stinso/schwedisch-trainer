@@ -19,6 +19,8 @@ sample.json = async (p) => {
   if (/Erwartete Antwort/.test(p)) return { correct: false, feedback_de: "Fast." };
   if (/Mini-Lektion/.test(p)) return { title_de: "Präteritum", lesson_de: "Starke Verben ändern den Vokal.", examples: [{ sv: "Jag gick hem.", de: "Ich ging nach Hause." }], exercises: [{ prompt_de: "Ich ging", answer_sv: "jag gick" }, { prompt_de: "Er sah", answer_sv: "han såg" }] };
   if (/zum Nachsprechen/.test(p)) return { sentences: [{ sv: "Jag bor och jobbar i Malmö.", de: "Ich wohne und arbeite in Malmö.", tip_de: "och spricht man ‚ock‘" }, { sv: "Hej då!", de: "Tschüss!" }] };
+  if (/Übersetze diesen schwedischen Text/.test(p)) return { de: "Hallo! Wie schön. Was hast du danach gemacht?" };
+  if (/hier bedeutet/.test(p)) return { base_sv: "göra", de: "machen", note_de: "gjorde = Präteritum von göra" };
   if (/möchte Folgendes sagen/.test(p)) return { sv: "Jag missade tåget.", note_de: "" };
   return { ok: false, corrected: "Jag gick till stranden.", natural: "Jag var på stranden.", explanation_de: "gå → gick" };
 };
