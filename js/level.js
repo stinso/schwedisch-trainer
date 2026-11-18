@@ -90,3 +90,8 @@ export function streak(dayKeys, today) {
   }
   return n;
 }
+
+export function placementShouldStop(responses) {
+  const last2 = responses.slice(-2);
+  return last2.length === 2 && last2.every((r) => !String(r.answer ?? "").trim());
+}

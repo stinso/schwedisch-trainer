@@ -59,3 +59,13 @@ test("streak crosses month boundaries", () => {
 test("dayKey uses local date as YYYY-MM-DD", () => {
   assert.equal(dayKey(new Date(2026, 0, 5, 23, 30)), "2026-01-05");
 });
+
+import { placementShouldStop } from "../js/level.js";
+
+test("placement stops after two consecutive empty answers", () => {
+  const r = (a) => ({ answer: a });
+  assert.equal(placementShouldStop([r("x"), r("")]), false);
+  assert.equal(placementShouldStop([r("x"), r(""), r("  ")]), true);
+  assert.equal(placementShouldStop([r(""), r("y"), r("")]), false);
+  assert.equal(placementShouldStop([]), false);
+});
