@@ -113,6 +113,7 @@ async function steps() {
   await click("Fertig");
   await wait(300);
   log.push("shadow: " + text());
+  if (location.search.includes("shot=shadow")) throw new Error("STOP");
   await click("Weiter");
   await click("Weiter");
   await wait(400);
@@ -121,6 +122,7 @@ async function steps() {
   location.hash = "progress";
   await wait(400);
   log.push("progress: " + text());
+  if (location.search.includes("shot=progress")) throw new Error("STOP");
   location.hash = "today";
   await wait(400);
   if (location.search.includes("shot=today")) throw new Error("STOP");
