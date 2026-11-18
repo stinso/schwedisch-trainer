@@ -1,4 +1,4 @@
-import { h, fill, thinking, toast } from "../ui.js";
+import { h, fill, thinking, toast, speakButton } from "../ui.js";
 import { LEVELS, dayKey, streak } from "../level.js";
 
 const KIND = { conversation: "Gespräch", listening: "Hörübung", review: "Wiederholung", placement: "Einstufung", speaking: "Nachsprechen" };
@@ -51,6 +51,7 @@ export function render(root, ctx) {
           ? h("ul", { class: "list" }, mistakes.slice(0, 5).map((m) =>
               h("li", {}, h("div", { class: "spread" }, h("span", {}, h("span", { class: "wrong" }, m.wrong), " → ", h("span", { class: "right-txt" }, m.right)), h("span", { class: "pill" }, (m.count || 1) + "×")), m.rule_de && h("span", { class: "small muted" }, m.rule_de))))
           : h("p", { class: "muted" }, "Noch keine Fehler gesammelt. Nach deinem ersten Gespräch erscheinen sie hier.")),
+      wordbook(vocab),
       h("section", { class: "card" },
         h("h3", {}, "Letzte Einheiten"),
         sessions.length
@@ -58,5 +59,43 @@ export function render(root, ctx) {
               h("li", {}, h("div", { class: "spread" }, h("strong", {}, (KIND[s.kind] || s.kind) + (s.topic ? " · " + s.topic : "")), h("span", { class: "small muted" }, new Date(s.date).toLocaleDateString("de-DE") + " · " + (s.minutes || 0) + " Min.")), s.summary_de && h("span", { class: "small muted" }, s.summary_de))))
           : h("p", { class: "muted" }, "Noch keine Einheiten."))
     );
+  }
+
+  // Searchable word book: listen, see level, remove entries.
+  function wordbook(vocab) {
+    const sorted = [...vocab].sort((a, b) => String(a.sv).localeCompare(String(b.sv), "sv"));
+    const search = h("input", { type: "text", id: "wordbook-search", placeholder: "Suchen (Schwedisch oder Deutsch) …" });
+    const list = h("ul", { class: "list" });
+    const LIMIT = 50;
+    const draw = () => {
+      const q = search.value.trim().toLowerCase();
+      const hits = sorted.filter((v) => !q || String(v.sv).toLowerCase().includes(q) || String(v.de).toLowerCase().includes(q));
+      fill(list,
+        hits.slice(0, LIMIT).map((v) => {
+          const del = h("button", { class: "icon ghost", title: "Entfernen", "aria-label": "Entfernen", onclick: async () => {
+            del.disabled = true;
+            try {
+              await ctx.store.deleteItem(v);
+              sorted.splice(sorted.indexOf(v), 1);
+              draw();
+            } catch {
+              del.disabled = false;
+              toast("Löschen hat nicht geklappt.");
+            }
+          } }, "✕");
+          return h("li", {},
+            h("div", { class: "spread" },
+              h("span", { class: "row", style: "gap:6px" }, h("strong", { class: "sv", lang: "sv" }, v.sv), speakButton(ctx.speech, v.sv, { rate: () => ctx.rate })),
+              h("span", { class: "row", style: "gap:6px" }, h("span", { class: "pill" + ((v.box || 0) >= 3 ? " good" : "") }, "Stufe " + (v.box || 0) + "/5"), del)),
+            v.de && h("span", { class: "small muted" }, v.de));
+        }),
+        hits.length > LIMIT && h("li", { class: "small muted" }, `… und ${hits.length - LIMIT} weitere – grenze die Suche ein.`),
+        !hits.length && h("li", { class: "muted" }, q ? "Nichts gefunden." : "Noch keine Wörter gesammelt."));
+    };
+    search.addEventListener("input", draw);
+    draw();
+    return h("section", { class: "card" },
+      h("div", { class: "spread" }, h("h3", {}, "📖 Dein Wortschatz"), h("span", { class: "small muted" }, sorted.length + " Einträge")),
+      search, list);
   }
 }

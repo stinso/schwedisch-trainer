@@ -146,3 +146,13 @@ test("getStats on empty store is zeroed", async () => {
   assert.deepEqual(await createStore(fakeDb(), "u1").getStats(), { minutes: 0, sessions: 0, days: [] });
   assert.deepEqual(await createStore(null, null).getStats(), { minutes: 0, sessions: 0, days: [] });
 });
+
+test("deleteItem removes a vocab or mistake entry", async () => {
+  const st = createStore(fakeDb(), "u1");
+  await st.addVocab({ sv: "hus", de: "Haus" }, NOW);
+  await st.addMistake({ wrong: "en hus", right: "ett hus" }, NOW);
+  const items = await st.listReviewItems();
+  for (const it of items) await st.deleteItem(it);
+  assert.deepEqual(await st.listReviewItems(), []);
+  await createStore(null, null).deleteItem({ kind: "vocab", id: "x" });
+});

@@ -43,7 +43,7 @@ function noopStore() {
     persistent: false,
     getProfile: nil, saveProfile: ok,
     addVocab: ok, addMistake: ok,
-    listReviewItems: none, saveReview: ok,
+    listReviewItems: none, saveReview: ok, deleteItem: ok,
     addSession: ok, listSessions: none,
     getStats: async () => ({ minutes: 0, sessions: 0, days: [] }),
     getDraft: nil, saveDraft: ok, clearDraft: ok,
@@ -99,6 +99,8 @@ export function createStore(db, uid) {
       const [v, m] = await Promise.all([list(vocab, "vocab"), list(mistakes, "mistake")]);
       return [...v, ...m];
     },
+
+    deleteItem: (item) => col[item.kind].doc(item.id).delete(),
 
     async saveReview(item, correct, now) {
       const next = review(strip(item), correct, now);
