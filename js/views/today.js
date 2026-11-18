@@ -22,6 +22,7 @@ export function render(root, ctx) {
     const [items, sessions, draft, stats] = await Promise.all([ctx.store.listReviewItems(), ctx.store.listSessions(30), ctx.store.getDraft(), ctx.store.getStats()]);
     if (!alive) return;
     const due = dueItems(items, now, 1000).length;
+    const topMistake = items.filter((i) => i.kind === "mistake").sort((a, b) => (b.count || 1) - (a.count || 1))[0];
     const todayKey = dayKey(now);
     const todays = sessions.filter((s) => dayKey(new Date(s.date)) === todayKey);
     const did = (kind) => todays.some((s) => s.kind === kind);
@@ -46,12 +47,13 @@ export function render(root, ctx) {
     if (draft?.history?.length) {
       plan.append(step("💬", "Gespräch fortsetzen", `„${draft.topic}“ – ${draft.history.filter((t) => t.role === "user").length} Antworten bisher`, false, () => ctx.go("talk", { resume: true }), "Weiter"));
     }
-    plan.append(
+    plan.append(...[
       step("🔁", "Wiederholen", due ? `${due} ${due === 1 ? "Eintrag ist" : "Einträge sind"} fällig · ca. ${Math.max(2, Math.ceil(Math.min(due, 20) / 3))} Min.` : "Nichts fällig – neue Wörter kommen aus deinen Gesprächen.", did("review") || !due, () => ctx.go("review"), due ? "Starten" : "Ansehen"),
       step("🗣️", "Gespräch zu einem Thema", "Sprechen, ✏️ bei Bedarf, Auswertung am Ende · ca. 10 Min.", did("conversation"), () => ctx.go("talk"), did("conversation") ? "Noch eins" : "Starten"),
       step("🎧", "Hörübung", "Kurzer Dialog + Verständnisfragen · ca. 5 Min.", did("listening"), () => ctx.go("listen"), did("listening") ? "Noch eine" : "Starten"),
+      topMistake && step("📐", "Grammatik-Tipp", `Dein häufigster Fehler: „${topMistake.wrong}“ → Regel verstehen und üben`, did("grammar"), () => ctx.go("grammar", { mistake: topMistake }), did("grammar") ? "Nochmal" : "Lernen"),
       step("🗨️", "Nachsprechen", "Sätze hören, nachsprechen, Aussprache prüfen · ca. 5 Min.", did("speaking"), () => ctx.go("speak"), did("speaking") ? "Nochmal" : "Starten")
-    );
+    ].filter(Boolean));
 
     const weekRow = h("div", { class: "week" });
     for (let i = 6; i >= 0; i--) {

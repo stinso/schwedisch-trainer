@@ -17,6 +17,7 @@ sample.json = async (p) => {
   if (/Verständnisfragen/.test(p)) return [{ correct: true, feedback_de: "Genau." }];
   if (/Einstufungstests/.test(p)) return { level: "A2", reason_de: "Solide Grundlagen." };
   if (/Erwartete Antwort/.test(p)) return { correct: false, feedback_de: "Fast." };
+  if (/Mini-Lektion/.test(p)) return { title_de: "Präteritum", lesson_de: "Starke Verben ändern den Vokal.", examples: [{ sv: "Jag gick hem.", de: "Ich ging nach Hause." }], exercises: [{ prompt_de: "Ich ging", answer_sv: "jag gick" }, { prompt_de: "Er sah", answer_sv: "han såg" }] };
   if (/zum Nachsprechen/.test(p)) return { sentences: [{ sv: "Jag bor och jobbar i Malmö.", de: "Ich wohne und arbeite in Malmö.", tip_de: "och spricht man ‚ock‘" }, { sv: "Hej då!", de: "Tschüss!" }] };
   if (/möchte Folgendes sagen/.test(p)) return { sv: "Jag missade tåget.", note_de: "" };
   return { ok: false, corrected: "Jag gick till stranden.", natural: "Jag var på stranden.", explanation_de: "gå → gick" };

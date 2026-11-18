@@ -165,3 +165,24 @@ test("evaluationPrompt with mission asks for goal_reached; parser keeps it", () 
   assert.equal(parseEvaluation({ summary_de: "s", goal_reached: true }).goal_reached, true);
   assert.equal(parseEvaluation({ summary_de: "s" }).goal_reached, null);
 });
+
+import { grammarPrompt, parseGrammar } from "../js/prompts.js";
+
+test("grammarPrompt names the mistake and level", () => {
+  const p = grammarPrompt("A2", { wrong: "jag gå igår", right: "jag gick igår", rule_de: "Präteritum" });
+  assert.match(p, /jag gå igår/);
+  assert.match(p, /A2/);
+});
+
+test("parseGrammar requires explanation and exercises", () => {
+  const g = parseGrammar({
+    title_de: "Präteritum",
+    lesson_de: "So geht's",
+    examples: [{ sv: "Jag gick", de: "Ich ging" }, { de: "ohne sv" }],
+    exercises: [{ prompt_de: "Ich ging nach Hause", answer_sv: "Jag gick hem" }, { prompt_de: "x" }],
+  });
+  assert.equal(g.examples.length, 1);
+  assert.equal(g.exercises.length, 1);
+  assert.throws(() => parseGrammar({ lesson_de: "x", exercises: [] }), ParseError);
+  assert.throws(() => parseGrammar({ exercises: [{ prompt_de: "a", answer_sv: "b" }] }), ParseError);
+});

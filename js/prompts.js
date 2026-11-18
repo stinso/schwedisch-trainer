@@ -256,3 +256,29 @@ export function parseShadow(v) {
   need(s.length > 0, "shadow: no sentences");
   return s;
 }
+
+// ---------- Grammar mini-lesson from an own mistake ----------
+
+export function grammarPrompt(level, mistake) {
+  return [
+    `Ein deutschsprachiger Schwedisch-Lernender (Niveau ${level}) macht immer wieder diesen Fehler:`,
+    `Falsch: "${mistake.wrong}" – Richtig: "${mistake.right}"${mistake.rule_de ? ` (${mistake.rule_de})` : ""}`,
+    `Erstelle eine Mini-Lektion zur zugrunde liegenden Regel:`,
+    `- "title_de": kurzer Titel der Regel.`,
+    `- "lesson_de": Erklärung auf Deutsch in 3–5 Sätzen, mit Vergleich zum Deutschen, wo hilfreich. Einfach, konkret, ohne Fachjargon-Overkill.`,
+    `- "examples": 3 schwedische Beispielsätze mit deutscher Übersetzung.`,
+    `- "exercises": 5 Übungen auf Niveau ${level}: "prompt_de" ist ein deutscher Satz zum Übersetzen, der genau diese Regel braucht; "answer_sv" die Lösung.`,
+    jsonOnly(`{"title_de": "...", "lesson_de": "...", "examples": [{"sv": "...", "de": "..."}], "exercises": [{"prompt_de": "...", "answer_sv": "..."}]}`),
+  ].join("\n");
+}
+
+export function parseGrammar(v) {
+  need(isObj(v), "grammar: not an object");
+  const lesson_de = str(v.lesson_de);
+  need(lesson_de, "grammar: lesson missing");
+  const exercises = arr(v.exercises)
+    .filter((x) => isObj(x) && str(x.prompt_de) && str(x.answer_sv))
+    .map((x) => ({ prompt_de: str(x.prompt_de), answer_sv: str(x.answer_sv) }));
+  need(exercises.length > 0, "grammar: no exercises");
+  return { title_de: str(v.title_de), lesson_de, examples: pairs(v.examples, "sv", "de"), exercises };
+}

@@ -120,3 +120,9 @@ test("reply and evaluate pass the mission through", async () => {
   assert.match(s.calls[1].input, /Kaffee bestellen/);
   assert.equal(ev.goal_reached, true);
 });
+
+test("grammar returns a parsed lesson", async () => {
+  const s = fakeSample({ json: { title_de: "t", lesson_de: "l", examples: [], exercises: [{ prompt_de: "a", answer_sv: "b" }] } });
+  const g = await createAI(s).grammar("A1", { wrong: "x", right: "y" });
+  assert.equal(g.exercises[0].answer_sv, "b");
+});

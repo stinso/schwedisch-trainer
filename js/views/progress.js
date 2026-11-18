@@ -1,7 +1,7 @@
 import { h, fill, thinking, toast, speakButton } from "../ui.js";
 import { LEVELS, dayKey, streak } from "../level.js";
 
-const KIND = { conversation: "Gespräch", listening: "Hörübung", review: "Wiederholung", placement: "Einstufung", speaking: "Nachsprechen" };
+const KIND = { conversation: "Gespräch", listening: "Hörübung", review: "Wiederholung", placement: "Einstufung", speaking: "Nachsprechen", grammar: "Grammatik" };
 
 export function render(root, ctx) {
   const body = h("div", { class: "stack" }, h("div", { class: "card" }, thinking("Lade deinen Fortschritt")));
@@ -49,7 +49,7 @@ export function render(root, ctx) {
         h("h3", {}, "Deine häufigsten Fehler"),
         mistakes.length
           ? h("ul", { class: "list" }, mistakes.slice(0, 5).map((m) =>
-              h("li", {}, h("div", { class: "spread" }, h("span", {}, h("span", { class: "wrong" }, m.wrong), " → ", h("span", { class: "right-txt" }, m.right)), h("span", { class: "pill" }, (m.count || 1) + "×")), m.rule_de && h("span", { class: "small muted" }, m.rule_de))))
+              h("li", {}, h("div", { class: "spread" }, h("span", {}, h("span", { class: "wrong" }, m.wrong), " → ", h("span", { class: "right-txt" }, m.right)), h("span", { class: "row", style: "gap:6px" }, h("span", { class: "pill" }, (m.count || 1) + "×"), h("button", { disabled: !ctx.ai.available, onclick: () => ctx.go("grammar", { mistake: m }) }, "Regel lernen"))), m.rule_de && h("span", { class: "small muted" }, m.rule_de))))
           : h("p", { class: "muted" }, "Noch keine Fehler gesammelt. Nach deinem ersten Gespräch erscheinen sie hier.")),
       wordbook(vocab),
       h("section", { class: "card" },

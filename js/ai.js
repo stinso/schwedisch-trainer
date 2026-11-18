@@ -37,6 +37,9 @@ export function createAI(sample) {
     shadow: (level, topic) =>
       json(P.shadowPrompt(level, topic), { modelTier: "default", cache: false }, P.parseShadow),
 
+    grammar: (level, mistake) =>
+      json(P.grammarPrompt(level, mistake), { modelTier: "default" }, P.parseGrammar),
+
     howToSay: (level, topic, de) =>
       json(P.howToSayPrompt(level, topic, de), { modelTier: "quick" }, P.parseHowToSay),
   };

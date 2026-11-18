@@ -121,6 +121,21 @@ async function steps() {
 
   location.hash = "progress";
   await wait(400);
+  await click("Regel lernen");
+  await wait(400);
+  log.push("grammar: " + text());
+  await click("Jetzt üben");
+  (await until("#view textarea")).value = "jag gick";
+  await click("Prüfen");
+  await click("Weiter");
+  (await until("#view textarea")).value = "han sag";
+  await click("Prüfen");
+  await wait(200);
+  await click("Fertig");
+  await wait(300);
+  log.push("grammar end: " + text());
+  location.hash = "progress";
+  await wait(400);
   log.push("progress: " + text());
   if (location.search.includes("shot=progress")) throw new Error("STOP");
   location.hash = "today";
