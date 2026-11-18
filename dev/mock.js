@@ -22,7 +22,7 @@ sample.json = async (p) => {
   if (/Übersetze diesen schwedischen Text/.test(p)) return { de: "Hallo! Wie schön. Was hast du danach gemacht?" };
   if (/hier bedeutet/.test(p)) return { base_sv: "göra", de: "machen", note_de: "gjorde = Präteritum von göra" };
   if (/möchte Folgendes sagen/.test(p)) return { sv: "Jag missade tåget.", note_de: "" };
-  return { ok: false, corrected: "Jag gick till stranden.", natural: "Jag var på stranden.", explanation_de: "gå → gick" };
+  return { ok: false, corrected: "Jag gick till stranden.", natural: "Jag var på stranden.", explanation_de: "gå → gick", heard_de: "„to“ wurde erkannt – gemeint war wohl „till“." };
 };
 const tts = { speak: async () => ({ playedMs: 1 }), stop: async () => {}, onState: () => () => {}, languages: async () => ["en", "sv", "de"] };
 const user = { id: async () => "dev-user" };

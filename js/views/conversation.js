@@ -173,17 +173,20 @@ export function render(root, ctx, params = {}) {
 
   function renderFix(fixBox, c) {
     fixBox.hidden = false;
+    const heard = c.heard_de && h("span", { class: "small muted" }, "🎤 " + c.heard_de);
     if (c.ok) {
       fill(fixBox, 
         h("span", { class: "pill good" }, "Richtig!"),
-        c.natural && c.natural !== c.corrected && h("span", {}, "Natürlicher: ", h("span", { class: "right", lang: "sv" }, c.natural))
+        c.natural && c.natural !== c.corrected && h("span", {}, "Natürlicher: ", h("span", { class: "right", lang: "sv" }, c.natural)),
+        heard
       );
       return;
     }
     fill(fixBox, 
       h("span", {}, h("span", { class: "right", lang: "sv" }, c.corrected), " ", speakButton(ctx.speech, c.corrected, { rate: () => ctx.rate })),
       c.explanation_de && h("span", { class: "muted" }, c.explanation_de),
-      c.natural && c.natural !== c.corrected && h("span", { class: "small" }, "Natürlicher: ", h("span", { lang: "sv" }, c.natural))
+      c.natural && c.natural !== c.corrected && h("span", { class: "small" }, "Natürlicher: ", h("span", { lang: "sv" }, c.natural)),
+      heard
     );
   }
 

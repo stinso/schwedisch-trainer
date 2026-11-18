@@ -225,3 +225,16 @@ test("parseExplain requires de and falls back to the clicked phrase", () => {
   assert.equal(parseExplain({ de: "finden" }, "tycker").base_sv, "tycker");
   assert.throws(() => parseExplain({ note_de: "x" }, "tycker"), ParseError);
 });
+
+test("speech-recognition slips: English/German words are read as misheard Swedish everywhere", () => {
+  const conv = conversationInput("B1", "Reisen", [{ role: "user", content: "jag var i what stad" }])[0].content;
+  assert.match(conv, /englisch.*deutsch|deutsch.*englisch/i);
+  assert.match(correctionPrompt("B1", "Var bor du?", "I bor in Berlin"), /heard_de/);
+  assert.match(evaluationPrompt("B1", "Reisen", [{ role: "user", content: "x" }]), /Erkennungsfehler/);
+});
+
+test("parseCorrection keeps a note about misheard words", () => {
+  const c = parseCorrection({ ok: true, corrected: "Jag bor i Berlin", heard_de: "„I“ wurde erkannt – gemeint war wohl „jag“." });
+  assert.equal(c.heard_de, "„I“ wurde erkannt – gemeint war wohl „jag“.");
+  assert.equal(parseCorrection({ ok: true, corrected: "Hej" }).heard_de, "");
+});

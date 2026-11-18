@@ -47,7 +47,7 @@ export function conversationInput(level, topic, history, mission = null) {
     `- Pro Antwort 1–3 kurze Sätze. Beende die Antwort meistens mit einer offenen Frage, damit der Lernende weiterspricht.`,
     `- Bleib beim Thema, sei neugierig und natürlich, wie in einem echten Gespräch.`,
     `- Korrigiere KEINE Fehler und erkläre keine Grammatik. Reagiere einfach inhaltlich.`,
-    `- Die Antworten des Lernenden stammen oft aus Spracherkennung: ignoriere fehlende Satzzeichen und kleine Erkennungsfehler.`,
+    `- Die Antworten des Lernenden stammen oft aus Spracherkennung: ignoriere fehlende Satzzeichen und Erkennungsfehler. Die Erkennung macht aus schwedisch gemeinten Wörtern manchmal ähnlich klingende englische oder deutsche Wörter (z. B. "what" statt "vad", "I" statt "jag"/"i", "hair" statt "här"): lies sie als das schwedische Wort, das gemeint war, und antworte darauf.`,
     `- Wenn der Lernende Deutsch schreibt oder sagt, dass er etwas nicht versteht, formuliere deine letzte Aussage einfacher auf Schwedisch neu.`,
     `- Keine Emojis, kein Markdown, keine Übersetzungen.`,
   ].join("\n");
@@ -65,13 +65,14 @@ export function correctionPrompt(level, prevAssistant, userText) {
   return [
     `Ein deutschsprachiger Schwedisch-Lernender (Niveau ${level}) hat in einem Gespräch geantwortet.`,
     `Der Text stammt evtl. aus Spracherkennung: fehlende Satzzeichen und Groß-/Kleinschreibung NICHT als Fehler werten.`,
+    `Die Erkennung macht aus schwedisch gemeinten Wörtern manchmal ähnlich klingende englische oder deutsche Wörter (z. B. "what" statt "vad"). Solche Wörter sind KEINE Fehler des Lernenden: setze in "corrected" das gemeinte schwedische Wort ein und nenne sie in "heard_de" (z. B. "„what“ wurde erkannt – gemeint war wohl „vad“."), sonst "heard_de" leer.`,
     `Gesprächspartner sagte: "${prevAssistant}"`,
     `Lernender antwortete: "${userText}"`,
     ``,
     `Prüfe Grammatik, Wortwahl und Wortstellung. "ok" ist true, wenn der Satz korrekt ist.`,
     `"corrected": der minimal korrigierte Satz. "natural": wie ein Muttersprachler es natürlich sagen würde.`,
     `"explanation_de": kurze Erklärung der Fehler auf Deutsch (max. 2 Sätze), leer wenn ok.`,
-    jsonOnly(`{"ok": false, "corrected": "Jag gick till stranden.", "natural": "Jag var på stranden.", "explanation_de": "Präteritum von gå ist gick."}`),
+    jsonOnly(`{"ok": false, "corrected": "Jag gick till stranden.", "natural": "Jag var på stranden.", "explanation_de": "Präteritum von gå ist gick.", "heard_de": ""}`),
   ].join("\n");
 }
 
@@ -84,6 +85,7 @@ export function parseCorrection(v, userText = "") {
     corrected,
     explanation_de: str(v.explanation_de),
     natural: str(v.natural) || corrected,
+    heard_de: str(v.heard_de),
   };
 }
 
@@ -92,7 +94,7 @@ export function parseCorrection(v, userText = "") {
 export function evaluationPrompt(level, topic, history, mission = null) {
   return [
     `Werte dieses schwedische Übungsgespräch eines deutschsprachigen Lernenden (Niveau ${level}) zum Thema "${topic}" aus.`,
-    `Die Sätze des Lernenden stammen evtl. aus Spracherkennung: Satzzeichen ignorieren.`,
+    `Die Sätze des Lernenden stammen evtl. aus Spracherkennung: Satzzeichen ignorieren. Englische oder deutsche Wörter, die wie ein passendes schwedisches Wort klingen, sind Erkennungsfehler, keine Fehler des Lernenden – nimm sie nicht in "mistakes" auf.`,
     ``,
     transcript(history),
     ``,
