@@ -4,6 +4,7 @@ import { createSpeech, createMic } from "./speech.js";
 import { createStore } from "./store.js";
 import { needsPlacement, streak, dayKey } from "./level.js";
 import { wireMicState, toast } from "./ui.js";
+import { createActiveClock } from "./time.js";
 import * as today from "./views/today.js";
 import * as progress from "./views/progress.js";
 import * as placement from "./views/placement.js";
@@ -26,6 +27,7 @@ async function use(name) {
 
 const ctx = {
   ai: null, speech: null, mic: null, store: null,
+  clock: createActiveClock(), // active practice time of the current view (see route)
   profile: null,
   params: {},
   get level() { return ctx.profile?.level || "A1"; },
@@ -61,6 +63,7 @@ function route() {
   ctx.speech?.stop();
   ctx.mic?.stop();
   root.replaceChildren();
+  ctx.clock = createActiveClock();
   const params = ctx.params;
   ctx.params = {};
   const out = VIEWS[name].render(root, ctx, params);
@@ -132,6 +135,12 @@ async function boot() {
   stopBar.onclick = () => ctx.speech.stop();
   document.body.append(stopBar);
   ctx.speech.onState(({ state }) => (stopBar.hidden = state === "idle"));
+
+  // Any interaction, reading aloud or dictation counts as practice for the active clock.
+  const touch = () => ctx.clock.touch();
+  for (const ev of ["pointerdown", "keydown", "input"]) document.addEventListener(ev, touch, { capture: true, passive: true });
+  ctx.speech.onState(touch);
+  ctx.mic.onState(touch);
 
   // Swedish voice check: if the platform lists languages and Swedish is missing, say so once.
   try {

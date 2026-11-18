@@ -6,7 +6,6 @@ import { aiErrorMessage } from "../ai.js";
 export function render(root, ctx, params = {}) {
   const items = placementItems();
   const responses = [];
-  const started = Date.now();
   let i = 0;
   const box = h("div", { class: "stack" });
   root.append(box);
@@ -102,7 +101,7 @@ export function render(root, ctx, params = {}) {
             e.currentTarget.disabled = true;
             await ctx.setProfile({ level: sel.value, placedAt: new Date().toISOString(), reason_de });
             try {
-              await ctx.store.addSession({ date: new Date().toISOString(), minutes: Math.max(1, Math.round((Date.now() - started) / 60000)), kind: "placement", summary_de: "Einstufung: " + sel.value });
+              await ctx.store.addSession({ date: new Date().toISOString(), minutes: ctx.clock.minutes(), kind: "placement", summary_de: "Einstufung: " + sel.value });
             } catch {}
             toast("Los geht's – lycka till!");
             ctx.go("today");

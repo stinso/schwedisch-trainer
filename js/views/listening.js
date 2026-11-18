@@ -4,7 +4,6 @@ import { aiErrorMessage } from "../ai.js";
 
 export function render(root, ctx) {
   let alive = true;
-  let started = Date.now();
   const box = h("div", { class: "stack" });
   root.append(box);
   pick();
@@ -25,7 +24,7 @@ export function render(root, ctx) {
   }
 
   async function make(topic) {
-    started = Date.now();
+    ctx.clock.reset();
     fill(box, h("section", { class: "card" }, thinking("Claude schreibt deinen Dialog")));
     try {
       const d = await ctx.ai.listening(ctx.level, topic);
@@ -97,7 +96,7 @@ export function render(root, ctx) {
           h("span", { class: "pill sun" }, `${right} von ${grades.length} richtig`),
           h("button", { class: "primary", onclick: pick }, "Neue Hörübung"),
           h("button", { onclick: () => ctx.go("today") }, "Zur Übersicht")));
-        await ctx.store.addSession({ date: new Date().toISOString(), minutes: Math.max(1, Math.round((Date.now() - started) / 60000)), kind: "listening", topic, summary_de: `${right}/${grades.length} Fragen richtig` }).catch(() => {});
+        await ctx.store.addSession({ date: new Date().toISOString(), minutes: ctx.clock.minutes(), kind: "listening", topic, summary_de: `${right}/${grades.length} Fragen richtig` }).catch(() => {});
         ctx.refreshHeader();
       } catch (e) {
         checkBtn.disabled = false;

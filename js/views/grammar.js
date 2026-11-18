@@ -5,7 +5,6 @@ import { aiErrorMessage } from "../ai.js";
 // Grammar mini-lesson built from one of the learner's own recurring mistakes.
 export function render(root, ctx, params = {}) {
   let alive = true;
-  let started = Date.now();
   const box = h("div", { class: "stack" });
   root.append(box);
   if (params.mistake) lesson(params.mistake);
@@ -53,7 +52,7 @@ export function render(root, ctx, params = {}) {
   }
 
   function practice(mistake, g) {
-    started = Date.now();
+    ctx.clock.reset();
     let finished = false;
     let i = 0;
     let right = 0;
@@ -120,7 +119,7 @@ export function render(root, ctx, params = {}) {
       if (finished) return;
       finished = true;
       const passed = right / g.exercises.length >= 0.8;
-      const minutes = Math.max(1, Math.round((Date.now() - started) / 60000));
+      const minutes = ctx.clock.minutes();
       if (alive) fill(box, h("section", { class: "card flash" },
         h("p", { class: "big-sv" }, passed ? "Regel sitzt! 🌟" : "Weiter dranbleiben 💪"),
         h("p", {}, `${right} von ${g.exercises.length} richtig.` + (passed ? "" : " Der Fehler bleibt in deiner Wiederholung.")),

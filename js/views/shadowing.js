@@ -7,7 +7,6 @@ import { compareWords } from "../shadow.js";
 export function render(root, ctx) {
   let alive = true;
   let unsub = () => {};
-  let started = Date.now();
   const box = h("div", { class: "stack" });
   root.append(box);
   pick();
@@ -40,7 +39,7 @@ export function render(root, ctx) {
   }
 
   function run(topic, sentences) {
-    started = Date.now();
+    ctx.clock.reset();
     let finished = false;
     const scores = [];
     let i = 0;
@@ -112,7 +111,7 @@ export function render(root, ctx) {
       const rated = scores.filter((x) => typeof x === "number");
       const avg = rated.length ? Math.round(rated.reduce((a, b) => a + b, 0) / rated.length) : 0;
       const weak = sentences.filter((_, k) => typeof scores[k] === "number" && scores[k] < 70);
-      const minutes = Math.max(1, Math.round((Date.now() - started) / 60000));
+      const minutes = ctx.clock.minutes();
       if (alive) fill(box, h("section", { class: "card flash" },
         h("p", { class: "big-sv" }, rated.length ? `Ø ${avg} %` : "Klart!"),
         h("p", {}, weak.length ? `${weak.length} ${weak.length === 1 ? "Satz kommt" : "Sätze kommen"} zum Üben in deine Wiederholung.` : "Super – alles gut verständlich."),

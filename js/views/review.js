@@ -5,7 +5,6 @@ import { aiErrorMessage } from "../ai.js";
 
 export function render(root, ctx) {
   let alive = true;
-  const started = Date.now();
   const box = h("div", { class: "stack" });
   root.append(h("div", { class: "stack" }, h("p", { class: "eyebrow" }, "Wiederholung"), h("h1", {}, "Was du gelernt hast")), box);
   box.append(h("div", { class: "card" }, thinking("Suche fällige Einträge")));
@@ -120,7 +119,7 @@ export function render(root, ctx) {
       h("p", { class: "big-sv" }, right === queue.length ? "Perfekt! 🌟" : "Bra! 👏"),
       h("p", {}, `${right} von ${queue.length} gewusst.`),
       h("div", { class: "row" }, h("button", { class: "primary", onclick: () => ctx.go("talk") }, "Gespräch starten"), h("button", { onclick: () => ctx.go("today") }, "Zur Übersicht"))));
-    await ctx.store.addSession({ date: new Date().toISOString(), minutes: Math.max(1, Math.round((Date.now() - started) / 60000)), kind: "review", summary_de: `${right}/${queue.length} gewusst` }).catch(() => {});
+    await ctx.store.addSession({ date: new Date().toISOString(), minutes: ctx.clock.minutes(), kind: "review", summary_de: `${right}/${queue.length} gewusst` }).catch(() => {});
     ctx.refreshHeader();
   }
 }
