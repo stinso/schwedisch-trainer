@@ -1,4 +1,4 @@
-import { h, thinking, answerField, speakButton } from "../ui.js";
+import { h, fill, thinking, answerField, speakButton } from "../ui.js";
 import { dueItems } from "../srs.js";
 import { exerciseFor, localMatch } from "../exercise.js";
 import { aiErrorMessage } from "../ai.js";
@@ -18,12 +18,12 @@ export function render(root, ctx) {
     queue = dueItems(items, new Date(), 20);
     if (!queue.length) return empty(items);
     next();
-  }, () => alive && box.replaceChildren(h("div", { class: "note err" }, "Konnte die Wiederholung nicht laden.")));
+  }, () => alive && fill(box, h("div", { class: "note err" }, "Konnte die Wiederholung nicht laden.")));
 
   return () => (alive = false);
 
   function empty(items) {
-    box.replaceChildren(h("section", { class: "card flash" },
+    fill(box, h("section", { class: "card flash" },
       h("p", { class: "big-sv" }, "Allt klart! 🎉"),
       h("p", { class: "muted" }, items.length ? "Heute ist nichts mehr fällig. Neue Einträge kommen aus deinen Gesprächen und Hörübungen." : "Noch nichts zu wiederholen. Führe ein Gespräch – deine Fehler und neuen Wörter landen hier."),
       h("div", { class: "row" },
@@ -42,7 +42,7 @@ export function render(root, ctx) {
       h("button", { class: "ghost", onclick: () => reveal() }, "Lösung zeigen"),
       h("button", { class: "primary", onclick: () => check() }, "Prüfen"));
     const showSv = ex.mode !== "de2sv";
-    box.replaceChildren(
+    fill(box, 
       h("div", { class: "spread" }, h("span", { class: "small muted" }, `${idx + 1} von ${queue.length}`), h("span", { class: "pill" }, item.kind === "mistake" ? "Eigener Fehler" : "Wort / Wendung")),
       h("div", { class: "progressbar" }, h("i", { style: `width:${(idx / queue.length) * 100}%` })),
       h("section", { class: "card" },
@@ -64,12 +64,12 @@ export function render(root, ctx) {
       if (localMatch(ans, ex.expected)) return grade(true, "");
       if (!ctx.ai.available) return reveal(ans);
       actions.hidden = true;
-      result.replaceChildren(thinking("Prüfe"));
+      fill(result, thinking("Prüfe"));
       try {
         const r = await ctx.ai.checkReview({ prompt_de: `${ex.title} „${ex.show}“`, answer_sv: ex.expected }, ans);
         grade(r.correct, r.feedback_de);
       } catch (e) {
-        result.replaceChildren(h("div", { class: "note err" }, aiErrorMessage(e)));
+        fill(result, h("div", { class: "note err" }, aiErrorMessage(e)));
         reveal(ans);
       }
     }
@@ -77,7 +77,7 @@ export function render(root, ctx) {
     function reveal(ans) {
       if (settled) return;
       actions.hidden = true;
-      result.replaceChildren(
+      fill(result, 
         solution(),
         h("p", { class: "small muted" }, ans ? "Stimmt deine Antwort?" : "Wusstest du es?"),
         h("div", { class: "row end" },
@@ -98,7 +98,7 @@ export function render(root, ctx) {
       if (ok) right++;
       const advance = (result) => { ctx.store.saveReview(item, result, new Date()).catch(() => {}); idx++; next(); };
       const cont = h("button", { class: "primary", onclick: () => advance(ok) }, idx + 1 < queue.length ? "Weiter" : "Fertig");
-      result.replaceChildren(
+      fill(result, 
         !selfGraded && h("div", { class: "row" }, h("span", { class: "pill " + (ok ? "good" : "bad") }, ok ? "Richtig!" : "Nicht ganz"), feedback && h("span", {}, feedback)),
         (!ok || ex.hint || selfGraded) && solution(),
         h("div", { class: "row end" },
@@ -112,7 +112,7 @@ export function render(root, ctx) {
   }
 
   async function done() {
-    box.replaceChildren(h("section", { class: "card flash" },
+    fill(box, h("section", { class: "card flash" },
       h("p", { class: "big-sv" }, right === queue.length ? "Perfekt! 🌟" : "Bra! 👏"),
       h("p", {}, `${right} von ${queue.length} gewusst.`),
       h("div", { class: "row" }, h("button", { class: "primary", onclick: () => ctx.go("talk") }, "Gespräch starten"), h("button", { onclick: () => ctx.go("today") }, "Zur Übersicht"))));

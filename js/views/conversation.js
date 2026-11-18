@@ -1,4 +1,4 @@
-import { h, thinking, errorBox, answerField, speakButton, rateSelect, fmtMin, toast } from "../ui.js";
+import { h, fill, thinking, errorBox, answerField, speakButton, rateSelect, fmtMin, toast } from "../ui.js";
 import { topicsFor } from "../level.js";
 import { aiErrorMessage } from "../ai.js";
 
@@ -12,6 +12,7 @@ export function render(root, ctx, params = {}) {
   let saveChain = Promise.resolve();
   let listenMode = false;
   let autoRead = ctx.speech.available;
+  let chatEl, composer, field, timerEl, softNote;
 
   const box = h("div", { class: "stack" });
   root.append(box);
@@ -41,7 +42,7 @@ export function render(root, ctx, params = {}) {
     const custom = h("input", { type: "text", id: "custom-topic", placeholder: "Eigenes Thema, z. B. „Mein Garten“", maxlength: "80" });
     const startCustom = () => custom.value.trim() && start(custom.value.trim());
     custom.addEventListener("keydown", (e) => e.key === "Enter" && startCustom());
-    box.replaceChildren(
+    fill(box, 
       h("div", { class: "stack" }, h("p", { class: "eyebrow" }, "Gespräch · Niveau " + ctx.level), h("h1", {}, "Worüber möchtest du sprechen?")),
       draft?.history?.length &&
         h("div", { class: "note row" }, h("span", {}, `Du hast ein offenes Gespräch: „${draft.topic}“.`), h("button", { onclick: () => { state = { corrections: {}, ...draft }; chat(); } }, "Fortsetzen")),
@@ -66,7 +67,6 @@ export function render(root, ctx, params = {}) {
   }
 
   // ---------------------------------------------------------------- chat
-  let chatEl, composer, field, timerEl, softNote;
 
   function chat() {
     chatEl = h("div", { class: "chat", "aria-live": "polite" });
@@ -89,7 +89,7 @@ export function render(root, ctx, params = {}) {
     composer = h("div", { class: "composer" }, field.el);
     field.el.querySelector(".row").append(h("span", { style: "flex:1" }), h("button", { class: "ghost", onclick: help, title: "Frag auf Deutsch, wie man etwas sagt" }, "💡 Wie sagt man…?"), sendBtn);
 
-    box.replaceChildren(
+    fill(box, 
       h("div", { class: "spread" },
         h("div", { class: "stack", style: "gap:2px" }, h("p", { class: "eyebrow" }, "Gespräch · " + ctx.level), h("h2", {}, state.topic)),
         h("div", { class: "row" }, timerEl, h("button", { onclick: finish }, "Beenden & auswerten"))),
@@ -127,7 +127,7 @@ export function render(root, ctx, params = {}) {
     fixBox.hidden = false;
     if (state.corrections[idx]) return renderFix(fixBox, state.corrections[idx]);
     const prev = [...state.history.slice(0, idx)].reverse().find((t) => t.role === "assistant")?.content || "";
-    fixBox.replaceChildren(thinking("Prüfe deinen Satz"));
+    fill(fixBox, thinking("Prüfe deinen Satz"));
     pen.disabled = true;
     try {
       const c = await ctx.ai.correct(ctx.level, prev, state.history[idx].content);
@@ -135,7 +135,7 @@ export function render(root, ctx, params = {}) {
       saveDraft();
       renderFix(fixBox, c);
     } catch (e) {
-      fixBox.replaceChildren(errorBox(aiErrorMessage(e), () => { fixBox.hidden = true; toggleFix(idx, fixBox, pen); }));
+      fill(fixBox, errorBox(aiErrorMessage(e), () => { fixBox.hidden = true; toggleFix(idx, fixBox, pen); }));
     } finally {
       pen.disabled = false;
     }
@@ -144,13 +144,13 @@ export function render(root, ctx, params = {}) {
   function renderFix(fixBox, c) {
     fixBox.hidden = false;
     if (c.ok) {
-      fixBox.replaceChildren(
+      fill(fixBox, 
         h("span", { class: "pill good" }, "Richtig!"),
         c.natural && c.natural !== c.corrected && h("span", {}, "Natürlicher: ", h("span", { class: "right", lang: "sv" }, c.natural))
       );
       return;
     }
-    fixBox.replaceChildren(
+    fill(fixBox, 
       h("span", {}, h("span", { class: "right", lang: "sv" }, c.corrected), " ", speakButton(ctx.speech, c.corrected, { rate: () => ctx.rate })),
       c.explanation_de && h("span", { class: "muted" }, c.explanation_de),
       c.natural && c.natural !== c.corrected && h("span", { class: "small" }, "Natürlicher: ", h("span", { lang: "sv" }, c.natural))
@@ -185,7 +185,7 @@ export function render(root, ctx, params = {}) {
       const text = await ctx.ai.reply(ctx.level, state.topic, state.history, {
         signal: ctl.signal,
         onText: ({ text }) => {
-          if (!p.isConnected) bubble.replaceChildren(p);
+          if (!p.isConnected) fill(bubble, p);
           p.textContent = text;
         },
       });
@@ -211,7 +211,7 @@ export function render(root, ctx, params = {}) {
     composer.prepend(hint);
     try {
       const r = await ctx.ai.howToSay(ctx.level, state.topic, q);
-      hint.replaceChildren(
+      fill(hint, 
         h("div", { class: "stack", style: "gap:4px" },
           h("span", { class: "small muted" }, "„" + q + "“ auf Schwedisch:"),
           h("strong", { class: "sv", lang: "sv" }, r.sv),
@@ -222,7 +222,7 @@ export function render(root, ctx, params = {}) {
       );
       ctx.store.addVocab({ sv: r.sv, de: q, source: "hilfe" }, new Date()).catch(() => {});
     } catch (e) {
-      hint.replaceChildren(errorBox(aiErrorMessage(e)), h("button", { class: "ghost", onclick: () => hint.remove() }, "Schließen"));
+      fill(hint, errorBox(aiErrorMessage(e)), h("button", { class: "ghost", onclick: () => hint.remove() }, "Schließen"));
     }
   }
 
@@ -237,7 +237,7 @@ export function render(root, ctx, params = {}) {
       await ctx.store.clearDraft().catch(() => {});
       return pick();
     }
-    box.replaceChildren(h("section", { class: "card" }, thinking("Claude wertet euer Gespräch aus")));
+    fill(box, h("section", { class: "card" }, thinking("Claude wertet euer Gespräch aus")));
     try {
       const ev = await ctx.ai.evaluate(ctx.level, state.topic, state.history);
       if (!alive) return;
@@ -245,7 +245,7 @@ export function render(root, ctx, params = {}) {
       showEvaluation(ev);
     } catch (e) {
       if (!alive) return;
-      box.replaceChildren(
+      fill(box, 
         errorBox(aiErrorMessage(e) || "Abgebrochen.", finish),
         h("div", { class: "row" }, h("button", { onclick: () => chat() }, "Zurück zum Gespräch"))
       );
@@ -270,7 +270,7 @@ export function render(root, ctx, params = {}) {
 
   function showEvaluation(ev) {
     const say = (sv) => speakButton(ctx.speech, sv, { rate: () => ctx.rate });
-    box.replaceChildren(
+    fill(box, 
       h("div", { class: "stack" }, h("p", { class: "eyebrow" }, "Auswertung · " + state.topic), h("h1", {}, "Bra jobbat!")),
       h("section", { class: "card" }, h("p", {}, ev.summary_de)),
       ev.mistakes.length > 0 && h("section", { class: "card" },

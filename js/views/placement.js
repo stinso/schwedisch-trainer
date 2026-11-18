@@ -1,4 +1,4 @@
-import { h, thinking, errorBox, answerField, speakButton, toast } from "../ui.js";
+import { h, fill, thinking, errorBox, answerField, speakButton, toast } from "../ui.js";
 import { placementItems } from "../prompts.js";
 import { LEVELS, placementShouldStop } from "../level.js";
 import { aiErrorMessage } from "../ai.js";
@@ -13,7 +13,7 @@ export function render(root, ctx, params = {}) {
   intro();
 
   function intro() {
-    box.replaceChildren(
+    fill(box, 
       h("div", { class: "stack" },
         h("p", { class: "eyebrow" }, params.retest ? "Neue Einstufung" : "Willkommen"),
         h("h1", {}, params.retest ? "Wo stehst du jetzt?" : "Lass uns herausfinden, wo du stehst")),
@@ -57,7 +57,7 @@ export function render(root, ctx, params = {}) {
       i++;
       step();
     };
-    box.replaceChildren(
+    fill(box, 
       h("div", { class: "spread" }, h("p", { class: "eyebrow" }, `Aufgabe ${i + 1} von ${total} · ${it.level}`), h("span", { class: "pill" }, { listen: "Hören", read: "Lesen", speak: "Sprechen" }[it.task])),
       h("div", { class: "progressbar" }, h("i", { style: `width:${(i / total) * 100}%` })),
       h("section", { class: "card" },
@@ -76,19 +76,19 @@ export function render(root, ctx, params = {}) {
   async function finish() {
     const answered = responses.filter((r) => r.answer);
     if (!answered.length) return manual("A1", "Start bei Null – keine Aufgabe beantwortet.");
-    box.replaceChildren(h("section", { class: "card" }, thinking("Claude wertet deine Antworten aus")));
+    fill(box, h("section", { class: "card" }, thinking("Claude wertet deine Antworten aus")));
     try {
       const res = await ctx.ai.place(responses.map((r) => ({ task: r.task + (r.revealed ? " (Text eingeblendet)" : ""), prompt: r.prompt, answer: r.answer })));
       result(res);
     } catch (e) {
-      box.replaceChildren(errorBox(aiErrorMessage(e) || "Abgebrochen.", finish), manualPicker());
+      fill(box, errorBox(aiErrorMessage(e) || "Abgebrochen.", finish), manualPicker());
     }
   }
 
   function result({ level, reason_de }) {
     const sel = h("select", { id: "result-level", "aria-label": "Niveau anpassen" }, LEVELS.map((l) => h("option", { value: l }, l)));
     sel.value = level;
-    box.replaceChildren(
+    fill(box, 
       h("p", { class: "eyebrow" }, "Ergebnis"),
       h("section", { class: "card" },
         h("div", { class: "ladder" }, LEVELS.map((l, k) => h("span", { class: l === level ? "current" : k < LEVELS.indexOf(level) ? "reached" : "" }, l))),

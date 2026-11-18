@@ -1,4 +1,4 @@
-import { h, thinking, toast } from "../ui.js";
+import { h, fill, thinking, toast } from "../ui.js";
 import { LEVELS, dayKey, streak } from "../level.js";
 
 const KIND = { conversation: "Gespräch", listening: "Hörübung", review: "Wiederholung", placement: "Einstufung" };
@@ -7,7 +7,7 @@ export function render(root, ctx) {
   const body = h("div", { class: "stack" }, h("div", { class: "card" }, thinking("Lade deinen Fortschritt")));
   root.append(h("h1", {}, "Fortschritt"), body);
   let alive = true;
-  load().catch(() => alive && body.replaceChildren(h("div", { class: "note err" }, "Konnte den Fortschritt nicht laden.")));
+  load().catch(() => alive && fill(body, h("div", { class: "note err" }, "Konnte den Fortschritt nicht laden.")));
   return () => (alive = false);
 
   async function load() {
@@ -29,7 +29,7 @@ export function render(root, ctx) {
 
     const stat = (n, label) => h("div", { class: "stat" }, h("b", {}, n), h("span", { class: "muted small" }, label));
 
-    body.replaceChildren(
+    fill(body, 
       h("section", { class: "card" },
         h("div", { class: "spread" }, h("h2", {}, "Niveau " + ctx.level), h("div", { class: "row" }, h("label", { for: "level-select", class: "small muted" }, "Ändern:"), levelSel)),
         h("div", { class: "ladder" }, LEVELS.map((l, i) => h("span", { class: l === ctx.level ? "current" : i < LEVELS.indexOf(ctx.level) ? "reached" : "" }, l))),
@@ -38,8 +38,8 @@ export function render(root, ctx) {
           ctx.profile?.placedAt && h("span", { class: "small muted" }, "Eingestuft am " + new Date(ctx.profile.placedAt).toLocaleDateString("de-DE")),
           h("button", { onclick: () => ctx.go("placement", { retest: true }) }, "Neu einstufen"))),
       h("section", { class: "stats" },
-        stat(days.size, "Tage geübt"),
-        stat(st, "Tage am Stück"),
+        stat(days.size, days.size === 1 ? "Tag geübt" : "Tage geübt"),
+        stat(st, st === 1 ? "Tag am Stück" : "Tage am Stück"),
         stat(minutes, "Minuten gesamt"),
         stat(vocab.length, "Wörter & Wendungen"),
         stat(learned, "davon sicher")),

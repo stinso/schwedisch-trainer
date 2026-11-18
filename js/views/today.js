@@ -1,4 +1,4 @@
-import { h, thinking } from "../ui.js";
+import { h, fill, thinking } from "../ui.js";
 import { dueItems } from "../srs.js";
 import { streak, dayKey, shouldSuggestRetest, LEVELS } from "../level.js";
 
@@ -14,7 +14,7 @@ export function render(root, ctx) {
 
   let alive = true;
   load().catch(() => {
-    if (alive) body.replaceChildren(h("div", { class: "note err" }, "Konnte deine Daten nicht laden."));
+    if (alive) fill(body, h("div", { class: "note err" }, "Konnte deine Daten nicht laden."));
   });
   return () => (alive = false);
 
@@ -62,7 +62,7 @@ export function render(root, ctx) {
     const ladder = h("div", { class: "ladder", "aria-label": "Niveau-Leiter" },
       LEVELS.map((l, i) => h("span", { class: l === ctx.level ? "current" : i < LEVELS.indexOf(ctx.level) ? "reached" : "" }, l)));
 
-    body.replaceChildren(
+    fill(body, 
       ...notes,
       h("section", { class: "card" }, h("div", { class: "spread" }, h("h2", {}, "Dein Plan für heute"), h("span", { class: "pill sun" }, `${minutesToday} Min. heute`)), plan),
       h("section", { class: "card" },

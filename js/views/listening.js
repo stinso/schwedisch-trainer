@@ -1,4 +1,4 @@
-import { h, thinking, errorBox, speakButton, rateSelect, toast } from "../ui.js";
+import { h, fill, thinking, errorBox, speakButton, rateSelect, toast } from "../ui.js";
 import { topicsFor } from "../level.js";
 import { aiErrorMessage } from "../ai.js";
 
@@ -13,7 +13,7 @@ export function render(root, ctx) {
   function pick() {
     const topics = topicsFor(ctx.level);
     const custom = h("input", { type: "text", id: "listen-topic", placeholder: "Eigenes Thema …", maxlength: "80" });
-    box.replaceChildren(
+    fill(box, 
       h("div", { class: "stack" }, h("p", { class: "eyebrow" }, "Hörübung · Niveau " + ctx.level), h("h1", {}, "Hör gut zu")),
       !ctx.ai.available && h("div", { class: "note" }, "Claude ist hier nicht verfügbar. Öffne die Seite auf claude.ai, um Hörübungen zu erzeugen."),
       !ctx.speech.available && h("div", { class: "note" }, "Vorlesen ist in dieser Ansicht nicht verfügbar. Du kannst den Dialog lesen statt hören."),
@@ -26,12 +26,12 @@ export function render(root, ctx) {
 
   async function make(topic) {
     started = Date.now();
-    box.replaceChildren(h("section", { class: "card" }, thinking("Claude schreibt deinen Dialog")));
+    fill(box, h("section", { class: "card" }, thinking("Claude schreibt deinen Dialog")));
     try {
       const d = await ctx.ai.listening(ctx.level, topic);
       if (alive) player(topic, d);
     } catch (e) {
-      if (alive) box.replaceChildren(errorBox(aiErrorMessage(e) || "Abgebrochen.", () => make(topic)), h("button", { class: "ghost", onclick: pick }, "Anderes Thema"));
+      if (alive) fill(box, errorBox(aiErrorMessage(e) || "Abgebrochen.", () => make(topic)), h("button", { class: "ghost", onclick: pick }, "Anderes Thema"));
     }
   }
 
@@ -40,7 +40,7 @@ export function render(root, ctx) {
     let showDe = false;
     const lines = h("div", {});
     const renderLines = () =>
-      lines.replaceChildren(...d.lines.map((l) =>
+      fill(lines, ...d.lines.map((l) =>
         h("div", { class: "line" },
           h("span", { class: "spk " + l.speaker, "aria-label": "Sprecher " + l.speaker }, l.speaker),
           h("div", { class: "stack", style: "gap:2px" },
@@ -62,7 +62,7 @@ export function render(root, ctx) {
     const feedback = d.questions.map(() => h("div", { class: "small" }));
     const checkBtn = h("button", { class: "primary", onclick: check }, "Antworten prüfen");
 
-    box.replaceChildren(
+    fill(box, 
       h("div", { class: "spread" }, h("div", { class: "stack", style: "gap:2px" }, h("p", { class: "eyebrow" }, "Hörübung · " + topic), h("h2", { lang: "sv" }, d.title_sv || topic)), h("button", { class: "ghost", onclick: pick }, "Andere Übung")),
       h("section", { class: "card" },
         h("div", { class: "row" },
@@ -80,7 +80,7 @@ export function render(root, ctx) {
 
     async function check() {
       checkBtn.disabled = true;
-      checkBtn.replaceChildren("Prüfe …");
+      fill(checkBtn, "Prüfe …");
       try {
         const grades = await ctx.ai.grade(d.questions.map((q, i) => ({ ...q, user: answers[i].value.trim() })));
         let right = 0;
@@ -101,7 +101,7 @@ export function render(root, ctx) {
         ctx.refreshHeader();
       } catch (e) {
         checkBtn.disabled = false;
-        checkBtn.replaceChildren("Antworten prüfen");
+        fill(checkBtn, "Antworten prüfen");
         toast(aiErrorMessage(e));
       }
     }

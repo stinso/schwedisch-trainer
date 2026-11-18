@@ -132,3 +132,9 @@ export function fmtMin(ms) {
   const s = Math.floor(ms / 1000);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
+
+/** replaceChildren that skips null/false/undefined (conditional children). */
+export function fill(el, ...kids) {
+  el.replaceChildren(...kids.flat(Infinity).filter((k) => k != null && k !== false && k !== ""));
+  return el;
+}
