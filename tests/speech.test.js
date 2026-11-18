@@ -105,3 +105,27 @@ test("dictation dismissed keeps the mic available", async () => {
   await mic.start({}).catch(() => {});
   assert.equal(mic.available, true);
 });
+
+test("say(lines) passes line ids so the page can follow along", async () => {
+  const t = fakeTts();
+  await createSpeech(t).say([{ id: "l0", speaker: "A", sv: "Hej" }, { id: "l1", speaker: "B", sv: "Tjena" }]);
+  assert.deepEqual(t.calls[0].what.map((l) => l.id), ["l0", "l1"]);
+});
+
+test("onLine, pause and resume pass through to tts and are safe without it", async () => {
+  const seen = [];
+  let lineFn;
+  const t = { ...fakeTts(), onLine: (fn) => ((lineFn = fn), () => {}), pause: async () => seen.push("pause"), resume: async () => seen.push("resume") };
+  const sp = createSpeech(t);
+  const got = [];
+  sp.onLine((e) => got.push(e.id));
+  lineFn({ line: 1, id: "l1" });
+  await sp.pause();
+  await sp.resume();
+  assert.deepEqual(got, ["l1"]);
+  assert.deepEqual(seen, ["pause", "resume"]);
+  const none = createSpeech(null);
+  assert.equal(typeof none.onLine(() => {}), "function");
+  await none.pause();
+  await none.resume();
+});

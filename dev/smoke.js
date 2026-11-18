@@ -104,7 +104,19 @@ async function steps() {
 
   location.hash = "listen";
   (await until("#view .topic")).click();
+  await until("#q0");
+  await wait(220); // autoplay is on line 2 now
+  const playing = () => [...document.querySelectorAll(".line")].map((l) => (l.classList.contains("playing") ? "*" : "-")).join("");
+  const mainTxt = () => document.querySelector("#view button.primary.speak")?.textContent;
+  log.push("listen playing: " + playing() + " btn=" + mainTxt());
+  document.querySelector("#view button.primary.speak").click(); // pause
+  await wait(250);
+  log.push("listen paused: " + playing() + " btn=" + mainTxt());
+  await click("Von vorne");
+  await wait(60);
+  log.push("listen restart: " + playing() + " btn=" + mainTxt());
   await wait(400);
+  log.push("listen done: " + playing() + " btn=" + mainTxt());
   (await until("#q0")).value = "Im Zug";
   await click("Antworten prüfen");
   await wait(300);

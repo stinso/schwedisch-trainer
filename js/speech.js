@@ -15,10 +15,13 @@ export function createSpeech(tts) {
     onUnavailable: gone.add,
     onError: errors.add,
     onState: (fn) => (tts ? tts.onState(fn) : () => {}),
+    onLine: (fn) => (tts?.onLine ? tts.onLine(fn) : () => {}),
+    pause: () => (tts?.pause ? tts.pause().catch(() => {}) : Promise.resolve()),
+    resume: () => (tts?.resume ? tts.resume().catch(() => {}) : Promise.resolve()),
     async say(what, { rate } = {}) {
       if (!api.available) return;
       const input = Array.isArray(what)
-        ? what.map((l) => ({ text: l.sv, voice: VOICE[l.speaker] || VOICE.A, language: "sv" }))
+        ? what.map((l) => ({ text: l.sv, voice: VOICE[l.speaker] || VOICE.A, language: "sv", ...(l.id ? { id: l.id } : {}) }))
         : what;
       try {
         await tts.speak(input, { language: "sv", ...(rate ? { rate } : {}) });

@@ -24,7 +24,31 @@ sample.json = async (p) => {
   if (/möchte Folgendes sagen/.test(p)) return { sv: "Jag missade tåget.", note_de: "" };
   return { ok: false, corrected: "Jag gick till stranden.", natural: "Jag var på stranden.", explanation_de: "gå → gick", heard_de: "„to“ wurde erkannt – gemeint war wohl „till“." };
 };
-const tts = { speak: async () => ({ playedMs: 1 }), stop: async () => {}, onState: () => () => {}, languages: async () => ["en", "sv", "de"] };
+// tts that "reads" each line for 150 ms, reporting state and line like the real one
+const th = { state: new Set(), line: new Set() };
+let ttsRun = 0, ttsPaused = false;
+const ttsState = (state, reason) => th.state.forEach((f) => f({ state, reason }));
+const tts = {
+  async speak(what) {
+    const run = ++ttsRun;
+    ttsPaused = false;
+    const list = Array.isArray(what) ? what : [{ text: what }];
+    ttsState("speaking");
+    for (let i = 0; i < list.length; i++) {
+      if (run !== ttsRun) return;
+      th.line.forEach((f) => f({ line: i, id: list[i].id }));
+      for (let t = 0; t < 150 || ttsPaused; t += 10) { await wait(10); if (run !== ttsRun) return; }
+    }
+    ttsState("idle", "completed");
+    return { playedMs: 1 };
+  },
+  stop: async () => { ttsRun++; ttsPaused = false; ttsState("idle", "viewer_stopped"); },
+  pause: async () => { ttsPaused = true; ttsState("paused"); },
+  resume: async () => { ttsPaused = false; ttsState("speaking"); },
+  onState: (fn) => (th.state.add(fn), () => th.state.delete(fn)),
+  onLine: (fn) => (th.line.add(fn), () => th.line.delete(fn)),
+  languages: async () => ["en", "sv", "de"],
+};
 const user = { id: async () => "dev-user" };
 const dh = {};
 let listening = false;

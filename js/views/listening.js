@@ -4,12 +4,15 @@ import { aiErrorMessage } from "../ai.js";
 
 export function render(root, ctx) {
   let alive = true;
+  let unsubs = []; // tts listeners of the current player
+  const unhook = () => { unsubs.forEach((u) => { try { u(); } catch {} }); unsubs = []; };
   const box = h("div", { class: "stack" });
   root.append(box);
   pick();
-  return () => (alive = false);
+  return () => { alive = false; unhook(); };
 
   function pick() {
+    unhook();
     const topics = topicsFor(ctx.level);
     const custom = h("input", { type: "text", id: "listen-topic", placeholder: "Eigenes Thema …", maxlength: "80" });
     fill(box, 
@@ -35,12 +38,16 @@ export function render(root, ctx) {
   }
 
   function player(topic, d) {
+    unhook();
+    d = { ...d, lines: d.lines.map((l, i) => ({ ...l, id: "l" + i })) };
     let showText = !ctx.speech.available;
+    let current = null; // id of the line being read
+    let phase = "idle"; // idle | speaking | paused
     let showDe = false;
     const lines = h("div", {});
     const renderLines = () =>
       fill(lines, ...d.lines.map((l) =>
-        h("div", { class: "line" },
+        h("div", { class: "line" + (l.id === current ? " playing" : ""), "data-id": l.id },
           h("span", { class: "spk " + l.speaker, "aria-label": "Sprecher " + l.speaker }, l.speaker),
           h("div", { class: "stack", style: "gap:2px" },
             h("span", { class: "sv" + (showText ? "" : " hidden-text"), lang: "sv" }, l.sv),
@@ -54,6 +61,27 @@ export function render(root, ctx) {
             } }, "＋")))));
     renderLines();
 
+    const mark = () => lines.querySelectorAll(".line").forEach((el) => {
+      const on = el.dataset.id === current;
+      el.classList.toggle("playing", on);
+      if (on) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+    // From the top: end a paused or running reading first, then read every line again.
+    const playAll = async () => {
+      if (phase !== "idle") await ctx.speech.stop();
+      ctx.speech.say(d.lines, { rate: ctx.rate });
+    };
+    const mainBtn = h("button", { class: "primary speak", onclick: () => (phase === "speaking" ? ctx.speech.pause() : phase === "paused" ? ctx.speech.resume() : playAll()) }, "▶ Dialog abspielen");
+    const drawMain = () => (mainBtn.textContent = phase === "speaking" ? "⏸ Pause" : phase === "paused" ? "▶ Weiter" : "▶ Dialog abspielen");
+    unsubs.push(
+      ctx.speech.onLine(({ id }) => { if (id) { current = id; mark(); } }),
+      ctx.speech.onState(({ state }) => {
+        phase = state === "paused" ? "paused" : state === "idle" ? "idle" : "speaking";
+        if (phase === "idle") { current = null; mark(); }
+        drawMain();
+      })
+    );
+
     const textBtn = h("button", { class: "ghost", onclick: () => { showText = !showText; textBtn.textContent = showText ? "Text verbergen" : "Text zeigen"; renderLines(); } }, showText ? "Text verbergen" : "Text zeigen");
     const deBtn = h("button", { class: "ghost", onclick: () => { showDe = !showDe; if (showDe) showText = true; textBtn.textContent = showText ? "Text verbergen" : "Text zeigen"; deBtn.textContent = showDe ? "Übersetzung aus" : "Übersetzung"; renderLines(); } }, "Übersetzung");
 
@@ -65,7 +93,8 @@ export function render(root, ctx) {
       h("div", { class: "spread" }, h("div", { class: "stack", style: "gap:2px" }, h("p", { class: "eyebrow" }, "Hörübung · " + topic), h("h2", { lang: "sv" }, d.title_sv || topic)), h("button", { class: "ghost", onclick: pick }, "Andere Übung")),
       h("section", { class: "card" },
         h("div", { class: "row" },
-          h("button", { class: "primary speak", onclick: () => ctx.speech.say(d.lines, { rate: ctx.rate }) }, "▶ Dialog abspielen"),
+          mainBtn,
+          h("button", { class: "speak", title: "Dialog von Anfang an abspielen", onclick: playAll }, "⏮ Von vorne"),
           h("button", { class: "speak", onclick: () => ctx.speech.stop() }, "■ Stopp"),
           rateSelect(() => ctx.rate, (r) => ctx.setRate(r)),
           textBtn, deBtn),
@@ -75,7 +104,7 @@ export function render(root, ctx) {
         h("ol", { class: "list" }, d.questions.map((q, i) => h("li", {}, h("label", { for: "q" + i }, q.q_de), answers[i], feedback[i]))),
         h("div", { class: "row end" }, checkBtn))
     );
-    if (ctx.speech.available) ctx.speech.say(d.lines, { rate: ctx.rate });
+    if (ctx.speech.available) playAll();
 
     async function check() {
       checkBtn.disabled = true;
