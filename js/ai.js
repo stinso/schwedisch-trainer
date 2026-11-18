@@ -19,7 +19,7 @@ export function createAI(sample) {
     },
 
     correct: (level, prev, userText) =>
-      json(P.correctionPrompt(level, prev, userText), { modelTier: "quick" }, P.parseCorrection),
+      json(P.correctionPrompt(level, prev, userText), { modelTier: "quick" }, (v) => P.parseCorrection(v, userText)),
 
     evaluate: (level, topic, history) =>
       json(P.evaluationPrompt(level, topic, history), { modelTier: "default", cache: false }, P.parseEvaluation),
@@ -47,6 +47,7 @@ export function aiErrorMessage(err) {
   if (code === "rate_limited") return "Gerade zu viele Anfragen – bitte kurz warten.";
   if (code === "invalid_json" || code === "parse_error" || code === "empty_completion" || err instanceof P.ParseError)
     return "Antwort war unvollständig – nochmal versuchen.";
+  if (code === "refused") return "Claude hat das abgelehnt – formuliere es anders.";
   if (code === "session_expired") return "Bitte bei claude.ai neu anmelden.";
   return "Verbindungsproblem – nochmal versuchen.";
 }

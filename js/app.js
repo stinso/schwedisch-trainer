@@ -95,8 +95,8 @@ async function renderHeader() {
   lv.hidden = !ctx.profile?.level;
   lv.textContent = ctx.profile?.level ? "Niveau " + ctx.profile.level : "";
   try {
-    const sessions = await ctx.store.listSessions();
-    const n = streak(sessions.map((s) => dayKey(new Date(s.date))), dayKey(new Date()));
+    const stats = await ctx.store.getStats();
+    const n = streak(stats.days, dayKey(new Date()));
     st.hidden = n === 0;
     st.textContent = "🔥 " + n + (n === 1 ? " Tag" : " Tage");
   } catch {
@@ -122,6 +122,14 @@ async function boot() {
   });
   ctx.speech.onError((code) => toast(code === "rate_limited" ? "Vorlesen gerade pausiert – zu viele Anfragen." : "Vorlesen hat nicht geklappt."));
   if (ctx.mic.available) wireMicState(ctx.mic);
+  // A page-side Stop whenever something is being read aloud.
+  const stopBar = document.createElement("button");
+  stopBar.className = "speaking-bar primary";
+  stopBar.textContent = "■ Vorlesen stoppen";
+  stopBar.hidden = true;
+  stopBar.onclick = () => ctx.speech.stop();
+  document.body.append(stopBar);
+  ctx.speech.onState(({ state }) => (stopBar.hidden = state === "idle"));
 
   // Swedish voice check: if the platform lists languages and Swedish is missing, say so once.
   try {

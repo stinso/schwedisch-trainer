@@ -1,4 +1,4 @@
-import { h, fill, thinking, answerField, speakButton } from "../ui.js";
+import { h, fill, thinking, answerField, speakButton, readAnswer } from "../ui.js";
 import { dueItems } from "../srs.js";
 import { exerciseFor, localMatch } from "../exercise.js";
 import { aiErrorMessage } from "../ai.js";
@@ -32,6 +32,7 @@ export function render(root, ctx) {
   }
 
   function next() {
+    ctx.mic.stop();
     if (idx >= queue.length) return done();
     const item = queue[idx];
     const ex = exerciseFor(item);
@@ -56,9 +57,11 @@ export function render(root, ctx) {
     field.focus();
 
     let settled = false;
+    let checking = false;
     async function check() {
-      if (settled) return;
-      const ans = field.input.value.trim();
+      if (settled || checking) return;
+      checking = true;
+      const ans = await readAnswer(ctx.mic, field.input);
       if (!ans) return reveal();
       if (ex.selfCheck) return reveal(ans);
       if (localMatch(ans, ex.expected)) return grade(true, "");
@@ -69,15 +72,16 @@ export function render(root, ctx) {
         const r = await ctx.ai.checkReview({ prompt_de: `${ex.title} „${ex.show}“`, answer_sv: ex.expected }, ans);
         grade(r.correct, r.feedback_de);
       } catch (e) {
-        fill(result, h("div", { class: "note err" }, aiErrorMessage(e)));
-        reveal(ans);
+        reveal(ans, h("div", { class: "note err" }, aiErrorMessage(e)));
       }
     }
 
-    function reveal(ans) {
+    function reveal(ans, prefix) {
       if (settled) return;
+      ctx.mic.stop();
       actions.hidden = true;
       fill(result, 
+        prefix,
         solution(),
         h("p", { class: "small muted" }, ans ? "Stimmt deine Antwort?" : "Wusstest du es?"),
         h("div", { class: "row end" },

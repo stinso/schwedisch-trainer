@@ -2,9 +2,10 @@
 export function fakeDb() {
   const docs = new Map();
   const clone = (v) => JSON.parse(JSON.stringify(v));
+  const deepFreeze = (o) => { if (o && typeof o === "object") { Object.values(o).forEach(deepFreeze); Object.freeze(o); } return o; };
   const snap = (path) => {
     const has = docs.has(path);
-    const body = has ? clone(docs.get(path)) : undefined;
+    const body = has ? deepFreeze(clone(docs.get(path))) : undefined;
     return { id: path.split("/").at(-1), exists: has, data: () => body, metadata: { fromCache: false, hasPendingWrites: false } };
   };
   const segs = (p) => p.split("/").length;

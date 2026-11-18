@@ -106,7 +106,9 @@ select { width: auto; }
 .pill.sun { background: var(--sun-soft); }
 .note { padding: 10px 14px; border-radius: var(--r-sm); background: var(--sun-soft); font-size: 0.9rem; }
 .note.err { background: var(--bad-soft); color: var(--bad); }
-.hidden-text { filter: blur(6px); user-select: none; }
+.hidden-text { filter: blur(6px); user-select: none; cursor: pointer; }
+body[data-nospeech] .hidden-text { filter: none; user-select: auto; }
+.speaking-bar { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 15; box-shadow: 0 4px 18px rgb(0 0 0 / 0.18); }
 .thinking { color: var(--muted); font-style: italic; }
 .thinking::after { content: "…"; animation: dots 1.2s steps(3) infinite; display: inline-block; width: 1em; overflow: hidden; vertical-align: bottom; }
 @keyframes dots { from { width: 0; } to { width: 1em; } }

@@ -46,6 +46,21 @@ async function steps() {
   await click("✏️");
   await wait(300);
   log.push("fix: " + ($(".fix")?.innerText.replace(/\s+/g, " ") || "none"));
+  // mic still on when sending: last phrase must be included
+  $("#view textarea").value = "Jag bor i Berlin";
+  await click("Sprechen");
+  await click("Senden");
+  await wait(400);
+  log.push("mic-send: " + [...document.querySelectorAll(".bubble.me .sv")].at(-1)?.textContent + " | field=" + JSON.stringify($("#view textarea").value));
+  // resume from Today (draft comes back frozen from the store)
+  location.hash = "today";
+  await wait(400);
+  await click("Weiter");
+  await wait(400);
+  (await until("#view textarea")).value = "Hej igen";
+  await click("Senden");
+  await wait(400);
+  log.push("resume: me-bubbles=" + document.querySelectorAll(".bubble.me").length + " them=" + document.querySelectorAll(".bubble.them").length);
   $("#view textarea").value = "Zug verpasst";
   await click("Wie sagt man");
   await wait(300);

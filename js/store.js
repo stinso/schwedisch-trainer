@@ -6,6 +6,9 @@
 //   data/users/<uid>/profile/sessions/<id>   session summaries
 //   data/users/<uid>/draft                   running conversation
 import { newItem, review } from "./srs.js";
+import { dayKey } from "./level.js";
+
+const dayKeyOf = (iso) => dayKey(new Date(iso));
 
 const SAFE = /[a-z0-9_\-.]/;
 
@@ -42,6 +45,7 @@ function noopStore() {
     addVocab: ok, addMistake: ok,
     listReviewItems: none, saveReview: ok,
     addSession: ok, listSessions: none,
+    getStats: async () => ({ minutes: 0, sessions: 0, days: [] }),
     getDraft: nil, saveDraft: ok, clearDraft: ok,
   };
 }
@@ -56,14 +60,18 @@ export function createStore(db, uid) {
   const sessions = profileRef.collection("sessions");
   const col = { vocab, mistake: mistakes };
 
-  const list = async (c, kind) => (await c.get()).docs.map((d) => ({ ...d.data(), id: d.id, kind }));
+  const statsRef = db.doc(base + "/stats");
+  // Delivered snapshot bodies are frozen: always hand out deep copies.
+  const copy = (v) => JSON.parse(JSON.stringify(v));
+  const list = async (c, kind) => (await c.get()).docs.map((d) => ({ ...copy(d.data()), id: d.id, kind }));
+  let statsChain = Promise.resolve();
 
   return {
     persistent: true,
 
     async getProfile() {
       const s = await profileRef.get();
-      return s.exists ? s.data() : null;
+      return s.exists ? copy(s.data()) : null;
     },
     saveProfile: (p) => profileRef.set({ ...p }),
 
@@ -98,7 +106,27 @@ export function createStore(db, uid) {
       return { ...next, id: item.id, kind: item.kind };
     },
 
-    addSession: (s) => sessions.add({ ...s }),
+    async addSession(s) {
+      await sessions.add({ ...s });
+      // Running totals, so stats never depend on a capped session list.
+      const day = dayKeyOf(s.date);
+      statsChain = statsChain.then(async () => {
+        const snap = await statsRef.get();
+        const cur = snap.exists ? copy(snap.data()) : { minutes: 0, sessions: 0, days: [] };
+        await statsRef.set({
+          minutes: (cur.minutes || 0) + (s.minutes || 0),
+          sessions: (cur.sessions || 0) + 1,
+          days: cur.days?.includes(day) ? cur.days : [...(cur.days || []), day],
+        });
+      });
+      await statsChain;
+    },
+
+    async getStats() {
+      const snap = await statsRef.get();
+      const d = snap.exists ? copy(snap.data()) : {};
+      return { minutes: d.minutes || 0, sessions: d.sessions || 0, days: d.days || [] };
+    },
 
     async listSessions(limit = 200) {
       return (await sessions.orderBy("date", "desc").limit(limit).get()).docs.map((d) => ({ ...d.data(), id: d.id }));
@@ -106,7 +134,7 @@ export function createStore(db, uid) {
 
     async getDraft() {
       const s = await draftRef.get();
-      return s.exists ? s.data() : null;
+      return s.exists ? copy(s.data()) : null;
     },
     saveDraft: (d) => draftRef.set({ ...d }),
     clearDraft: () => draftRef.delete(),

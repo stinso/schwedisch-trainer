@@ -1,4 +1,4 @@
-import { h, fill, thinking, errorBox, answerField, speakButton, toast } from "../ui.js";
+import { h, fill, thinking, errorBox, answerField, speakButton, toast, readAnswer } from "../ui.js";
 import { placementItems } from "../prompts.js";
 import { LEVELS, placementShouldStop } from "../level.js";
 import { aiErrorMessage } from "../ai.js";
@@ -43,6 +43,7 @@ export function render(root, ctx, params = {}) {
   }
 
   function step() {
+    ctx.mic.stop();
     if (i >= items.length || placementShouldStop(responses)) return finish();
     const it = items[i];
     const total = items.length;
@@ -66,8 +67,8 @@ export function render(root, ctx, params = {}) {
         h("p", { class: "muted" }, it.question_de),
         field.el,
         h("div", { class: "row end" },
-          h("button", { class: "ghost", onclick: () => next("") }, "Weiß ich nicht"),
-          h("button", { class: "primary", onclick: () => next(field.input.value) }, "Weiter")))
+          h("button", { class: "ghost", onclick: () => { ctx.mic.stop(); next(""); } }, "Weiß ich nicht"),
+          h("button", { class: "primary", onclick: async (e) => { e.currentTarget.disabled = true; next(await readAnswer(ctx.mic, field.input)); } }, "Weiter")))
     );
     if (it.task === "listen" && ctx.speech.available) ctx.speech.say(it.prompt_sv, { rate: ctx.rate });
     field.focus();
@@ -97,7 +98,8 @@ export function render(root, ctx, params = {}) {
         h("div", { class: "row" }, h("label", { for: "result-level", class: "small muted" }, "Passt nicht? Anpassen:"), sel),
         h("div", { class: "row end" }, h("button", {
           class: "primary",
-          onclick: async () => {
+          onclick: async (e) => {
+            e.currentTarget.disabled = true;
             await ctx.setProfile({ level: sel.value, placedAt: new Date().toISOString(), reason_de });
             try {
               await ctx.store.addSession({ date: new Date().toISOString(), minutes: Math.max(1, Math.round((Date.now() - started) / 60000)), kind: "placement", summary_de: "Einstufung: " + sel.value });

@@ -98,3 +98,7 @@ test("howToSay returns parsed sv on quick tier", async () => {
   assert.equal(r.sv, "Jag missade tåget.");
   assert.equal(s.calls[0].opts.modelTier, "quick");
 });
+
+test("refused gets its own message, not a connection problem", () => {
+  assert.equal(aiErrorMessage({ code: "refused" }), "Claude hat das abgelehnt – formuliere es anders.");
+});

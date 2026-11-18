@@ -11,19 +11,21 @@ export function render(root, ctx) {
   return () => (alive = false);
 
   async function load() {
-    const [items, sessions] = await Promise.all([ctx.store.listReviewItems(), ctx.store.listSessions()]);
+    const [items, sessions, stats] = await Promise.all([ctx.store.listReviewItems(), ctx.store.listSessions(10), ctx.store.getStats()]);
     if (!alive) return;
     const vocab = items.filter((i) => i.kind === "vocab");
     const mistakes = items.filter((i) => i.kind === "mistake").sort((a, b) => (b.count || 1) - (a.count || 1));
     const learned = vocab.filter((v) => (v.box || 0) >= 3).length;
-    const days = new Set(sessions.map((s) => dayKey(new Date(s.date))));
-    const minutes = sessions.reduce((a, s) => a + (s.minutes || 0), 0);
+    const days = new Set(stats.days);
+    const minutes = stats.minutes;
     const st = streak([...days], dayKey(new Date()));
 
     const levelSel = h("select", { id: "level-select", "aria-label": "Niveau ändern" }, LEVELS.map((l) => h("option", { value: l }, l)));
     levelSel.value = ctx.level;
     levelSel.onchange = async () => {
+      levelSel.disabled = true;
       await ctx.setProfile({ level: levelSel.value });
+      levelSel.disabled = false;
       toast("Niveau auf " + levelSel.value + " gesetzt.");
     };
 

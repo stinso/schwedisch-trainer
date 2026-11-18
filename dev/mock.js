@@ -22,5 +22,15 @@ sample.json = async (p) => {
 };
 const tts = { speak: async () => ({ playedMs: 1 }), stop: async () => {}, onState: () => () => {}, languages: async () => ["en", "sv", "de"] };
 const user = { id: async () => "dev-user" };
-const caps = { sample, tts, db, user, dictation: null };
+const dh = {};
+let listening = false;
+const dictation = {
+  start: async () => { listening = true; dh.state?.({ state: "listening" }); dh.partial?.({ text: "och jobbar" }); },
+  stop: async () => { if (!listening) return; listening = false; await wait(20); dh.final?.({ text: " och jobbar" }); dh.state?.({ state: "idle", reason: "stopped" }); },
+  active: () => listening,
+  onPartial: (fn) => ((dh.partial = fn), () => {}),
+  onFinal: (fn) => ((dh.final = fn), () => {}),
+  onState: (fn) => ((dh.state = fn), () => {}),
+};
+const caps = { sample, tts, db, user, dictation };
 window.claude = { use: async (n) => caps[n] ?? null };

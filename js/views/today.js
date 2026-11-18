@@ -19,14 +19,14 @@ export function render(root, ctx) {
   return () => (alive = false);
 
   async function load() {
-    const [items, sessions, draft] = await Promise.all([ctx.store.listReviewItems(), ctx.store.listSessions(), ctx.store.getDraft()]);
+    const [items, sessions, draft, stats] = await Promise.all([ctx.store.listReviewItems(), ctx.store.listSessions(30), ctx.store.getDraft(), ctx.store.getStats()]);
     if (!alive) return;
     const due = dueItems(items, now, 1000).length;
     const todayKey = dayKey(now);
     const todays = sessions.filter((s) => dayKey(new Date(s.date)) === todayKey);
     const did = (kind) => todays.some((s) => s.kind === kind);
     const minutesToday = todays.reduce((a, s) => a + (s.minutes || 0), 0);
-    const days = sessions.map((s) => dayKey(new Date(s.date)));
+    const days = stats.days;
     const st = streak(days, todayKey);
 
     const notes = [];

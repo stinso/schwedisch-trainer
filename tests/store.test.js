@@ -115,3 +115,34 @@ test("no db or uid → non-persistent no-op store", async () => {
   assert.deepEqual(await st.listSessions(), []);
   assert.equal(await st.getDraft(), null);
 });
+
+test("draft and profile from the store are mutable copies (real store freezes data())", async () => {
+  const db = fakeDb();
+  const st = createStore(db, "u1");
+  await st.saveDraft({ topic: "x", history: [{ role: "assistant", content: "Hej" }], corrections: {}, startedAt: NOW.toISOString() });
+  const d = await st.getDraft();
+  d.history.push({ role: "user", content: "Hej!" });
+  d.corrections[1] = { ok: true };
+  assert.equal(d.history.length, 2);
+  await st.saveProfile({ level: "A1" });
+  const p = await st.getProfile();
+  p.level = "A2";
+  const items = await (async () => { await st.addVocab({ sv: "hus", de: "Haus" }, NOW); return st.listReviewItems(); })();
+  items[0].box = 3;
+});
+
+test("addSession keeps running totals in a stats doc beyond any list limit", async () => {
+  const st = createStore(fakeDb(), "u1");
+  await st.addSession({ date: "2026-11-17T10:00:00Z", minutes: 5, kind: "review" });
+  await st.addSession({ date: "2026-11-18T10:00:00Z", minutes: 10, kind: "conversation" });
+  await st.addSession({ date: "2026-11-18T12:00:00Z", minutes: 3, kind: "listening" });
+  const s = await st.getStats();
+  assert.equal(s.minutes, 18);
+  assert.equal(s.sessions, 3);
+  assert.equal(s.days.length, 2);
+});
+
+test("getStats on empty store is zeroed", async () => {
+  assert.deepEqual(await createStore(fakeDb(), "u1").getStats(), { minutes: 0, sessions: 0, days: [] });
+  assert.deepEqual(await createStore(null, null).getStats(), { minutes: 0, sessions: 0, days: [] });
+});

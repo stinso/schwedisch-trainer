@@ -138,3 +138,9 @@ export function fill(el, ...kids) {
   el.replaceChildren(...kids.flat(Infinity).filter((k) => k != null && k !== false && k !== ""));
   return el;
 }
+
+/** Stop dictation (waiting for its last words) before reading a field. */
+export async function readAnswer(mic, input) {
+  if (mic?.available && mic.active()) await mic.stop();
+  return input.value.trim();
+}

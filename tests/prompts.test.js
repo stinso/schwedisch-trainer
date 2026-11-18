@@ -129,3 +129,14 @@ test("parseHowToSay requires sv", () => {
   assert.deepEqual(parseHowToSay({ sv: "Jag missade tåget.", note_de: "" }), { sv: "Jag missade tåget.", note_de: "" });
   assert.throws(() => parseHowToSay({ note_de: "x" }), ParseError);
 });
+
+test("parseCorrection falls back to the learner's text when ok and corrected is empty", () => {
+  const c = parseCorrection({ ok: true, corrected: "" }, "Jag heter Marc");
+  assert.equal(c.corrected, "Jag heter Marc");
+  assert.equal(c.ok, true);
+});
+
+test("parseEvaluation drops mistakes without a correction", () => {
+  const e = parseEvaluation({ summary_de: "s", mistakes: [{ wrong: "a", right: "" }, { wrong: "b", right: "c" }] });
+  assert.deepEqual(e.mistakes.map((m) => m.wrong), ["b"]);
+});

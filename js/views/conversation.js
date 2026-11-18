@@ -1,11 +1,15 @@
-import { h, fill, thinking, errorBox, answerField, speakButton, rateSelect, fmtMin, toast } from "../ui.js";
+import { h, fill, thinking, errorBox, answerField, speakButton, rateSelect, fmtMin, toast, readAnswer } from "../ui.js";
+import { accumulate, MAX_GAP_MS } from "../time.js";
 import { topicsFor } from "../level.js";
 import { aiErrorMessage } from "../ai.js";
 
 const SOFT_LIMIT_MS = 10 * 60 * 1000;
 
 export function render(root, ctx, params = {}) {
-  let state = null; // {topic, history, corrections, startedAt}
+  let state = null; // {topic, history, corrections, startedAt, activeMs}
+  let lastAt = null; // last activity (ms) in this view
+  let finished = false;
+  let sending = false;
   let ctl = null;
   let timer = null;
   let alive = true;
@@ -60,8 +64,19 @@ export function render(root, ctx, params = {}) {
     );
   }
 
+  function touch() {
+    const now = Date.now();
+    state.activeMs = accumulate(state.activeMs || 0, lastAt, now);
+    lastAt = now;
+  }
+  function activeNow() {
+    const gap = lastAt == null ? 0 : Date.now() - lastAt;
+    return (state.activeMs || 0) + (gap > 0 && gap <= MAX_GAP_MS ? gap : 0);
+  }
+
   function start(topic) {
-    state = { topic, history: [], corrections: {}, startedAt: new Date().toISOString() };
+    finished = false;
+    state = { topic, history: [], corrections: {}, startedAt: new Date().toISOString(), activeMs: 0 };
     chat();
     reply();
   }
@@ -99,13 +114,19 @@ export function render(root, ctx, params = {}) {
       composer
     );
     state.history.forEach((t, idx) => chatEl.append(t.role === "user" ? meBubble(t.content, idx) : themBubble(t.content)));
-    const t0 = new Date(state.startedAt).getTime();
+    lastAt = Date.now();
+    finished = false;
     clearInterval(timer);
     timer = setInterval(() => {
-      const ms = Date.now() - t0;
+      const ms = activeNow();
       timerEl.textContent = fmtMin(ms);
       if (ms > SOFT_LIMIT_MS && softNote.hidden) softNote.hidden = false;
     }, 1000);
+    // Resumed after a reload while Claude was answering: offer to fetch the reply.
+    if (state.history.length && state.history.at(-1).role === "user") {
+      const again = h("div", { class: "note row" }, h("span", {}, "Claudes Antwort fehlt noch."), h("button", { onclick: () => { again.remove(); reply(); } }, "Antwort holen"));
+      chatEl.append(again);
+    }
     field.focus();
   }
 
@@ -158,14 +179,17 @@ export function render(root, ctx, params = {}) {
   }
 
   function saveDraft() {
+    if (finished) return;
+    touch();
     const snapshot = JSON.parse(JSON.stringify(state));
     saveChain = saveChain.then(() => ctx.store.saveDraft(snapshot)).catch(() => {});
   }
 
-  function send() {
-    const text = field.input.value.trim();
-    if (!text || ctl) return;
-    ctx.mic.stop();
+  async function send() {
+    if (ctl || sending) return;
+    sending = true;
+    const text = await readAnswer(ctx.mic, field.input).finally(() => (sending = false));
+    if (!text || !alive) return;
     field.input.value = "";
     field.interim.textContent = "";
     const idx = state.history.length;
@@ -228,10 +252,13 @@ export function render(root, ctx, params = {}) {
 
   // ---------------------------------------------------------------- evaluation
   async function finish() {
+    if (finished) return;
     ctl?.abort();
     ctx.mic.stop();
     ctx.speech.stop();
     clearInterval(timer);
+    touch();
+    finished = true;
     const userTurns = state.history.filter((t) => t.role === "user").length;
     if (!userTurns) {
       await ctx.store.clearDraft().catch(() => {});
@@ -254,7 +281,7 @@ export function render(root, ctx, params = {}) {
 
   async function persist(ev) {
     const now = new Date();
-    const minutes = Math.max(1, Math.round((now - new Date(state.startedAt)) / 60000));
+    const minutes = Math.max(1, Math.round((state.activeMs || 0) / 60000));
     const src = "gespräch: " + state.topic;
     try {
       for (const m of ev.mistakes) await ctx.store.addMistake({ ...m, source: src }, now);

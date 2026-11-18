@@ -73,9 +73,9 @@ export function correctionPrompt(level, prevAssistant, userText) {
   ].join("\n");
 }
 
-export function parseCorrection(v) {
+export function parseCorrection(v, userText = "") {
   need(isObj(v), "correction: not an object");
-  const corrected = str(v.corrected);
+  const corrected = str(v.corrected) || (bool(v.ok) ? str(userText) : "");
   need(corrected, "correction: corrected missing");
   return {
     ok: bool(v.ok),
@@ -113,7 +113,7 @@ export function parseEvaluation(v) {
   const summary_de = str(v.summary_de);
   need(summary_de, "evaluation: summary_de missing");
   const mistakes = arr(v.mistakes)
-    .filter((m) => isObj(m) && str(m.wrong))
+    .filter((m) => isObj(m) && str(m.wrong) && str(m.right))
     .slice(0, 5)
     .map((m) => ({ wrong: str(m.wrong), right: str(m.right), rule_de: str(m.rule_de) }));
   return { summary_de, mistakes, phrases: pairs(v.phrases, "sv", "de"), vocab: pairs(v.vocab, "sv", "de") };
