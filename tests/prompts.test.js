@@ -116,3 +116,16 @@ test("placementItems has two items per level with known tasks", () => {
     assert.ok(i.prompt_sv && i.question_de);
   }
 });
+
+import { howToSayPrompt, parseHowToSay } from "../js/prompts.js";
+
+test("howToSay prompt includes the German phrase and level", () => {
+  const p = howToSayPrompt("A2", "Reisen", "Ich habe meinen Zug verpasst");
+  assert.match(p, /Ich habe meinen Zug verpasst/);
+  assert.match(p, /A2/);
+});
+
+test("parseHowToSay requires sv", () => {
+  assert.deepEqual(parseHowToSay({ sv: "Jag missade tåget.", note_de: "" }), { sv: "Jag missade tåget.", note_de: "" });
+  assert.throws(() => parseHowToSay({ note_de: "x" }), ParseError);
+});

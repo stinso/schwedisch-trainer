@@ -91,3 +91,10 @@ test("tiers: evaluate/listening/place default, grade/checkReview quick; listenin
   assert.deepEqual(tiers, ["default", "default", "default", "quick", "quick"]);
   assert.equal(s.calls[1].opts.cache, false);
 });
+
+test("howToSay returns parsed sv on quick tier", async () => {
+  const s = fakeSample({ json: { sv: "Jag missade tåget.", note_de: "missa = verpassen" } });
+  const r = await createAI(s).howToSay("A2", "Reisen", "Ich habe den Zug verpasst");
+  assert.equal(r.sv, "Jag missade tåget.");
+  assert.equal(s.calls[0].opts.modelTier, "quick");
+});

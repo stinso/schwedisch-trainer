@@ -213,3 +213,22 @@ export function parseReviewCheck(v) {
   need(isObj(v), "review: not an object");
   return { correct: bool(v.correct), feedback_de: str(v.feedback_de) };
 }
+
+// ---------- "Wie sagt man…?" helper ----------
+
+export function howToSayPrompt(level, topic, de) {
+  return [
+    `Ein deutschsprachiger Schwedisch-Lernender (Niveau ${level}) führt ein Gespräch zum Thema "${topic}" und möchte Folgendes sagen:`,
+    `"${de}"`,
+    `Gib eine natürliche schwedische Formulierung, die zum Niveau passt (so einfach wie möglich, so idiomatisch wie nötig).`,
+    `"note_de": optional 1 kurzer Hinweis auf Deutsch zu einem wichtigen Wort oder einer Konstruktion, sonst leer.`,
+    jsonOnly(`{"sv": "Jag missade tåget.", "note_de": "missa = verpassen"}`),
+  ].join("\n");
+}
+
+export function parseHowToSay(v) {
+  need(isObj(v), "howToSay: not an object");
+  const sv = str(v.sv);
+  need(sv, "howToSay: sv missing");
+  return { sv, note_de: str(v.note_de) };
+}
