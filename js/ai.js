@@ -8,8 +8,8 @@ export function createAI(sample) {
   return {
     available,
 
-    async reply(level, topic, history, { onText, signal } = {}) {
-      const { text } = await sample(P.conversationInput(level, topic, history), {
+    async reply(level, topic, history, { onText, signal, mission } = {}) {
+      const { text } = await sample(P.conversationInput(level, topic, history, mission), {
         modelTier: "quick",
         cache: false,
         onText,
@@ -21,8 +21,8 @@ export function createAI(sample) {
     correct: (level, prev, userText) =>
       json(P.correctionPrompt(level, prev, userText), { modelTier: "quick" }, (v) => P.parseCorrection(v, userText)),
 
-    evaluate: (level, topic, history) =>
-      json(P.evaluationPrompt(level, topic, history), { modelTier: "default", cache: false }, P.parseEvaluation),
+    evaluate: (level, topic, history, mission) =>
+      json(P.evaluationPrompt(level, topic, history, mission), { modelTier: "default", cache: false }, P.parseEvaluation),
 
     listening: (level, topic) =>
       json(P.listeningPrompt(level, topic), { modelTier: "default", cache: false }, P.parseListening),

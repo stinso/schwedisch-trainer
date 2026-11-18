@@ -36,10 +36,12 @@ export function trimHistory(history, maxTurns = 20) {
   return history.slice(-maxTurns);
 }
 
-export function conversationInput(level, topic, history) {
+export function conversationInput(level, topic, history, mission = null) {
   const rules = [
     `Du bist ein freundlicher schwedischer Gesprächspartner für einen deutschsprachigen Lernenden auf Niveau ${level} (GER).`,
-    `Thema des Gesprächs: "${topic}".`,
+    mission
+      ? `Rollenspiel: Du spielst "${mission.role_de}". Der Lernende hat diese Aufgabe: "${mission.goal_de}". Bleib konsequent in deiner Rolle, mach es realistisch, aber nicht unnötig schwer, und lass den Lernenden die Aufgabe selbst erledigen.`
+      : `Thema des Gesprächs: "${topic}".`,
     `Regeln:`,
     `- Schreibe ausschließlich Schwedisch. Sprachniveau: ${LEVEL_HINT[level] || LEVEL_HINT.A1}.`,
     `- Pro Antwort 1–3 kurze Sätze. Beende die Antwort meistens mit einer offenen Frage, damit der Lernende weiterspricht.`,
@@ -52,7 +54,7 @@ export function conversationInput(level, topic, history) {
   const h = trimHistory(history);
   const msgs = [{ role: "user", content: rules }, ...h];
   if (h.length === 0) {
-    msgs.push({ role: "user", content: "Beginne jetzt das Gespräch mit einer kurzen Begrüßung und einer ersten Frage zum Thema." });
+    msgs.push({ role: "user", content: mission ? "Beginne jetzt das Rollenspiel mit deiner ersten Äußerung in deiner Rolle." : "Beginne jetzt das Gespräch mit einer kurzen Begrüßung und einer ersten Frage zum Thema." });
   }
   return msgs;
 }
@@ -87,7 +89,7 @@ export function parseCorrection(v, userText = "") {
 
 // ---------- Evaluation ----------
 
-export function evaluationPrompt(level, topic, history) {
+export function evaluationPrompt(level, topic, history, mission = null) {
   return [
     `Werte dieses schwedische Übungsgespräch eines deutschsprachigen Lernenden (Niveau ${level}) zum Thema "${topic}" aus.`,
     `Die Sätze des Lernenden stammen evtl. aus Spracherkennung: Satzzeichen ignorieren.`,
@@ -98,6 +100,7 @@ export function evaluationPrompt(level, topic, history) {
     `- "summary_de": 2–3 ermutigende, konkrete Sätze auf Deutsch: was gut lief, worauf achten.`,
     `- "mistakes": die bis zu 5 wichtigsten Fehler des Lernenden: "wrong" (Originalausschnitt), "right" (korrigiert), "rule_de" (kurze Regel auf Deutsch).`,
     `- "phrases": 2–4 nützliche, natürlichere Formulierungen für das, was der Lernende sagen wollte: "sv" und "de".`,
+    ...(mission ? [`- "goal_reached": true/false – hat der Lernende die Aufgabe "${mission.goal_de}" erledigt? Erwähne das Ergebnis auch in summary_de.`] : []),
     `- "vocab": 3–8 Wörter, die dem Lernenden gefehlt haben oder für das Thema wichtig sind (Grundform, bei Substantiven mit en/ett): "sv" und "de".`,
     jsonOnly(`{"summary_de": "...", "mistakes": [{"wrong": "jag gå", "right": "jag gick", "rule_de": "..."}], "phrases": [{"sv": "...", "de": "..."}], "vocab": [{"sv": "en strand", "de": "Strand"}]}`),
   ].join("\n");
@@ -116,7 +119,8 @@ export function parseEvaluation(v) {
     .filter((m) => isObj(m) && str(m.wrong) && str(m.right))
     .slice(0, 5)
     .map((m) => ({ wrong: str(m.wrong), right: str(m.right), rule_de: str(m.rule_de) }));
-  return { summary_de, mistakes, phrases: pairs(v.phrases, "sv", "de"), vocab: pairs(v.vocab, "sv", "de") };
+  const goal_reached = v.goal_reached == null ? null : bool(v.goal_reached);
+  return { summary_de, mistakes, phrases: pairs(v.phrases, "sv", "de"), vocab: pairs(v.vocab, "sv", "de"), goal_reached };
 }
 
 // ---------- Listening ----------

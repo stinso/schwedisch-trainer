@@ -109,3 +109,14 @@ test("shadow returns parsed sentences, uncached", async () => {
   assert.equal(r[0].sv, "Hej!");
   assert.equal(s.calls[0].opts.cache, false);
 });
+
+test("reply and evaluate pass the mission through", async () => {
+  const m = { role_de: "Barista", goal_de: "Kaffee bestellen" };
+  const s = fakeSample({ json: { summary_de: "s", goal_reached: true } });
+  const ai = createAI(s);
+  await ai.reply("A1", "Café", [], { mission: m });
+  const ev = await ai.evaluate("A1", "Café", [{ role: "user", content: "En kaffe" }], m);
+  assert.match(s.calls[0].input[0].content, /Barista/);
+  assert.match(s.calls[1].input, /Kaffee bestellen/);
+  assert.equal(ev.goal_reached, true);
+});

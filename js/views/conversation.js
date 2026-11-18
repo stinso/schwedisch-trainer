@@ -1,6 +1,6 @@
 import { h, fill, thinking, errorBox, answerField, speakButton, rateSelect, fmtMin, toast, readAnswer } from "../ui.js";
 import { accumulate, MAX_GAP_MS } from "../time.js";
-import { topicsFor } from "../level.js";
+import { topicsFor, missionsFor } from "../level.js";
 import { aiErrorMessage } from "../ai.js";
 
 const SOFT_LIMIT_MS = 10 * 60 * 1000;
@@ -56,6 +56,10 @@ export function render(root, ctx, params = {}) {
         h("div", { class: "row" }, h("div", { style: "flex:1;min-width:200px" }, custom), h("button", { onclick: startCustom, disabled: !ctx.ai.available }, "Mit eigenem Thema starten")),
         h("button", { class: "ghost", onclick: () => start(topics[Math.floor(Math.random() * topics.length)].de), disabled: !ctx.ai.available }, "🎲 Überrasch mich")),
       h("section", { class: "card" },
+        h("div", { class: "spread" }, h("h3", {}, "🎭 Rollenspiele"), h("span", { class: "small muted" }, "Claude spielt eine Rolle, du hast eine Aufgabe")),
+        h("ul", { class: "list" }, missionsFor(ctx.level).map((m) =>
+          h("li", {}, h("div", { class: "spread" }, h("strong", {}, m.de), h("button", { disabled: !ctx.ai.available, onclick: () => start(m.de, m) }, "Spielen")), h("span", { class: "small muted" }, "🎯 " + m.goal_de))))),
+      h("section", { class: "card" },
         h("h3", {}, "So läuft es ab"),
         h("ul", { class: "list" },
           h("li", {}, "Claude spricht dich auf Schwedisch an. Du antwortest mit 🎤 oder tippst."),
@@ -74,9 +78,9 @@ export function render(root, ctx, params = {}) {
     return (state.activeMs || 0) + (gap > 0 && gap <= MAX_GAP_MS ? gap : 0);
   }
 
-  function start(topic) {
+  function start(topic, mission = null) {
     finished = false;
-    state = { topic, history: [], corrections: {}, startedAt: new Date().toISOString(), activeMs: 0 };
+    state = { topic, mission, history: [], corrections: {}, startedAt: new Date().toISOString(), activeMs: 0 };
     chat();
     reply();
   }
@@ -108,6 +112,7 @@ export function render(root, ctx, params = {}) {
       h("div", { class: "spread" },
         h("div", { class: "stack", style: "gap:2px" }, h("p", { class: "eyebrow" }, "Gespräch · " + ctx.level), h("h2", {}, state.topic)),
         h("div", { class: "row" }, timerEl, h("button", { onclick: finish }, "Beenden & auswerten"))),
+      state.mission && h("div", { class: "note" }, h("strong", {}, "🎯 Deine Aufgabe: "), state.mission.goal_de, h("br"), h("span", { class: "small muted" }, "Claude spielt: " + state.mission.role_de)),
       h("div", { class: "row" }, listenBtn, autoBtn, rateSelect(() => ctx.rate, (r) => ctx.setRate(r))),
       softNote,
       chatEl,
@@ -207,6 +212,7 @@ export function render(root, ctx, params = {}) {
     const p = h("p", { class: "sv", lang: "sv" });
     try {
       const text = await ctx.ai.reply(ctx.level, state.topic, state.history, {
+        mission: state.mission || null,
         signal: ctl.signal,
         onText: ({ text }) => {
           if (!p.isConnected) fill(bubble, p);
@@ -266,7 +272,7 @@ export function render(root, ctx, params = {}) {
     }
     fill(box, h("section", { class: "card" }, thinking("Claude wertet euer Gespräch aus")));
     try {
-      const ev = await ctx.ai.evaluate(ctx.level, state.topic, state.history);
+      const ev = await ctx.ai.evaluate(ctx.level, state.topic, state.history, state.mission || null);
       if (!alive) return;
       await persist(ev);
       showEvaluation(ev);
@@ -286,7 +292,7 @@ export function render(root, ctx, params = {}) {
     try {
       for (const m of ev.mistakes) await ctx.store.addMistake({ ...m, source: src }, now);
       for (const v of [...ev.vocab, ...ev.phrases]) await ctx.store.addVocab({ ...v, source: src }, now);
-      await ctx.store.addSession({ date: now.toISOString(), minutes, kind: "conversation", topic: state.topic, summary_de: ev.summary_de, turns: state.history.filter((t) => t.role === "user").length });
+      await ctx.store.addSession({ date: now.toISOString(), minutes, kind: "conversation", topic: (state.mission ? "Rollenspiel: " : "") + state.topic, summary_de: ev.summary_de, turns: state.history.filter((t) => t.role === "user").length });
       await saveChain;
       await ctx.store.clearDraft();
       ctx.refreshHeader();
@@ -299,7 +305,9 @@ export function render(root, ctx, params = {}) {
     const say = (sv) => speakButton(ctx.speech, sv, { rate: () => ctx.rate });
     fill(box, 
       h("div", { class: "stack" }, h("p", { class: "eyebrow" }, "Auswertung · " + state.topic), h("h1", {}, "Bra jobbat!")),
-      h("section", { class: "card" }, h("p", {}, ev.summary_de)),
+      h("section", { class: "card" },
+        ev.goal_reached != null && h("span", { class: "pill " + (ev.goal_reached ? "good" : "bad") }, ev.goal_reached ? "🎯 Aufgabe geschafft!" : "🎯 Aufgabe noch nicht ganz geschafft"),
+        h("p", {}, ev.summary_de)),
       ev.mistakes.length > 0 && h("section", { class: "card" },
         h("h3", {}, "Deine wichtigsten Fehler"),
         h("ul", { class: "list" }, ev.mistakes.map((m) =>

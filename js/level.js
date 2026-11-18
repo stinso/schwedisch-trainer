@@ -95,3 +95,44 @@ export function placementShouldStop(responses) {
   const last2 = responses.slice(-2);
   return last2.length === 2 && last2.every((r) => !String(r.answer ?? "").trim());
 }
+
+// Role-play missions: Claude plays a role, the learner has a concrete goal.
+const M = (id, de, role_de, goal_de) => ({ id, de, role_de, goal_de });
+const MISSIONS = {
+  A1: [
+    M("fika", "Fika bestellen", "Barista in einem Café in Stockholm", "Bestelle einen Kaffee und eine Zimtschnecke (kanelbulle) und frag, was es kostet."),
+    M("hotel", "Im Hotel einchecken", "Rezeptionist in einem Hotel in Göteborg", "Checke ein: nenne deinen Namen, frag nach dem Frühstück und dem WLAN-Passwort."),
+    M("weg", "Nach dem Weg fragen", "freundliche Passantin in Uppsala", "Finde heraus, wie du zum Bahnhof kommst und wie lange es zu Fuß dauert."),
+    M("markt", "Auf dem Markt", "Verkäufer an einem Obststand", "Kauf ein Kilo Äpfel und zwei Bananen und bezahle mit Karte."),
+    M("nachbar", "Den Nachbarn kennenlernen", "neuer Nachbar im Treppenhaus", "Stell dich vor und finde heraus, woher er kommt und was er arbeitet."),
+  ],
+  A2: [
+    M("arzt", "Termin beim Arzt", "Sprechstundenhilfe in einer Vårdcentral", "Vereinbare einen Termin, beschreibe kurz deine Beschwerden und bestätige Tag und Uhrzeit."),
+    M("zug", "Zug verpasst", "Mitarbeiterin am Schalter der SJ", "Erkläre, dass du deinen Zug verpasst hast, und buche den nächsten Zug nach Malmö um."),
+    M("restaurant", "Tisch reservieren", "Kellner in einem Restaurant", "Reserviere einen Tisch für vier Personen am Freitag und frag nach vegetarischen Gerichten."),
+    M("wohnung", "Wohnung besichtigen", "Vermieterin einer Zweizimmerwohnung", "Frag nach Miete, Nebenkosten und wann du einziehen kannst."),
+    M("reklamation", "Etwas umtauschen", "Verkäufer in einem Kleidungsgeschäft", "Tausche eine zu kleine Jacke um und frag, ob du stattdessen das Geld zurückbekommen kannst."),
+  ],
+  B1: [
+    M("vorstellung", "Vorstellungsgespräch", "Personalchefin eines Start-ups in Stockholm", "Stell dich vor, nenne zwei Stärken und frag nach den Arbeitszeiten."),
+    M("beschwerde", "Lärm beschweren", "Nachbar, der jeden Abend laut Musik hört", "Beschwere dich höflich und findet gemeinsam eine Lösung."),
+    M("bank", "Konto eröffnen", "Bankberater", "Eröffne ein Konto und finde heraus, welche Unterlagen (z. B. Personnummer) du brauchst."),
+    M("urlaub", "Urlaub planen", "Freundin, die mit dir nach Lappland reisen will", "Einigt euch auf Reisezeit, Transportmittel und Unterkunft."),
+  ],
+  B2: [
+    M("gehalt", "Gehalt verhandeln", "Abteilungsleiter, der knapp bei Kasse ist", "Verhandle eine Gehaltserhöhung von mindestens 5 % und begründe sie überzeugend."),
+    M("vermieter", "Mietstreit", "Vermieter, der die Kaution nicht zurückzahlen will", "Überzeuge ihn sachlich, die Kaution vollständig zurückzuzahlen."),
+    M("projekt", "Projekt vorstellen", "skeptische Kollegin im Meeting", "Stelle eine Projektidee vor und entkräfte mindestens zwei ihrer Einwände."),
+    M("versicherung", "Schaden melden", "Mitarbeiter einer Versicherung", "Melde einen Wasserschaden in deiner Wohnung und kläre, welche Kosten übernommen werden."),
+  ],
+  C1: [
+    M("debatte", "Podiumsdiskussion", "Moderatorin einer Radiodebatte über Vierstundenwoche", "Vertritt eine klare Position und reagiere auf kritische Nachfragen."),
+    M("journalist", "Interview geben", "Journalist von Dagens Nyheter", "Erkläre als Expertin/Experte ein Thema deiner Wahl verständlich und weiche einer Fangfrage diplomatisch aus."),
+    M("verhandlung", "Geschäftsverhandlung", "Einkäuferin eines schwedischen Möbelkonzerns", "Handle einen Liefervertrag aus: Preis, Liefertermin und Vertragsstrafe."),
+    M("kritik", "Konstruktive Kritik", "Mitarbeiter, dessen Arbeit nachgelassen hat", "Sprich das Problem taktvoll an und vereinbart konkrete nächste Schritte."),
+  ],
+};
+
+export function missionsFor(level) {
+  return MISSIONS[level] || MISSIONS.A1;
+}

@@ -12,7 +12,7 @@ function sample(input, opts = {}) {
 }
 sample.json = async (p) => {
   await wait(30);
-  if (/Partner:|Lernender:/.test(p) && /mistakes/.test(p)) return { summary_de: "Gut gemacht.", mistakes: [{ wrong: "jag gå", right: "jag gick", rule_de: "Präteritum" }], phrases: [{ sv: "Det var kul", de: "Das hat Spaß gemacht" }], vocab: [{ sv: "en strand", de: "Strand" }] };
+  if (/Partner:|Lernender:/.test(p) && /mistakes/.test(p)) return { goal_reached: /goal_reached/.test(p) ? true : undefined, summary_de: "Gut gemacht.", mistakes: [{ wrong: "jag gå", right: "jag gick", rule_de: "Präteritum" }], phrases: [{ sv: "Det var kul", de: "Das hat Spaß gemacht" }], vocab: [{ sv: "en strand", de: "Strand" }] };
   if (/Dialog/.test(p)) return { title_sv: "På tåget", lines: [{ speaker: "A", sv: "Hej!", de: "Hallo!" }, { speaker: "B", sv: "Hej, sitter någon här?", de: "Sitzt hier jemand?" }], questions: [{ q_de: "Wo sind sie?", answer_de: "Im Zug" }] };
   if (/Verständnisfragen/.test(p)) return [{ correct: true, feedback_de: "Genau." }];
   if (/Einstufungstests/.test(p)) return { level: "A2", reason_de: "Solide Grundlagen." };

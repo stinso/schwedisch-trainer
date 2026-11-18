@@ -94,6 +94,18 @@ async function steps() {
   await wait(300);
   log.push("listen graded: " + text());
 
+  location.hash = "talk";
+  await wait(400);
+  await click("Spielen");
+  await wait(400);
+  log.push("mission: " + ($("#view .note")?.innerText.replace(/s+/g, " ") || "none"));
+  (await until("#view textarea")).value = "En kaffe, tack";
+  await click("Senden");
+  await wait(300);
+  await click("Beenden & auswerten");
+  await wait(500);
+  log.push("mission eval: " + text());
+
   location.hash = "speak";
   (await until("#view .topic")).click();
   await wait(400);

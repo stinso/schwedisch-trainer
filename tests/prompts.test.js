@@ -140,3 +140,28 @@ test("parseEvaluation drops mistakes without a correction", () => {
   const e = parseEvaluation({ summary_de: "s", mistakes: [{ wrong: "a", right: "" }, { wrong: "b", right: "c" }] });
   assert.deepEqual(e.mistakes.map((m) => m.wrong), ["b"]);
 });
+
+import { missionsFor } from "../js/level.js";
+
+test("every level has at least 4 missions with role and goal", () => {
+  for (const l of LEVELS) {
+    const ms = missionsFor(l);
+    assert.ok(ms.length >= 4, l);
+    for (const m of ms) assert.ok(m.id && m.de && m.role_de && m.goal_de, JSON.stringify(m));
+  }
+});
+
+test("conversationInput with a mission puts role and goal into the rules", () => {
+  const m = { id: "x", de: "Im Café bestellen", role_de: "Barista in einem Café in Stockholm", goal_de: "Bestelle einen Kaffee und eine Zimtschnecke" };
+  const msgs = conversationInput("A1", m.de, [], m);
+  assert.match(msgs[0].content, /Barista/);
+  assert.match(msgs[0].content, /Zimtschnecke/);
+  assert.equal(msgs.at(-1).role, "user");
+});
+
+test("evaluationPrompt with mission asks for goal_reached; parser keeps it", () => {
+  const m = { goal_de: "Bestelle einen Kaffee" };
+  assert.match(evaluationPrompt("A1", "Café", [{ role: "user", content: "En kaffe" }], m), /goal_reached/);
+  assert.equal(parseEvaluation({ summary_de: "s", goal_reached: true }).goal_reached, true);
+  assert.equal(parseEvaluation({ summary_de: "s" }).goal_reached, null);
+});
