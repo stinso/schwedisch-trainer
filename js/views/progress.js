@@ -1,7 +1,7 @@
 import { h, fill, thinking, toast } from "../ui.js";
 import { LEVELS, dayKey, streak } from "../level.js";
 
-const KIND = { conversation: "Gespräch", listening: "Hörübung", review: "Wiederholung", placement: "Einstufung" };
+const KIND = { conversation: "Gespräch", listening: "Hörübung", review: "Wiederholung", placement: "Einstufung", speaking: "Nachsprechen" };
 
 export function render(root, ctx) {
   const body = h("div", { class: "stack" }, h("div", { class: "card" }, thinking("Lade deinen Fortschritt")));

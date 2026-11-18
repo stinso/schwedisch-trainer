@@ -232,3 +232,23 @@ export function parseHowToSay(v) {
   need(sv, "howToSay: sv missing");
   return { sv, note_de: str(v.note_de) };
 }
+
+// ---------- Shadowing (Nachsprechen) ----------
+
+export function shadowPrompt(level, topic) {
+  return [
+    `Erstelle 6 schwedische Sätze zum Nachsprechen für deutschsprachige Lernende auf Niveau ${level} (${LEVEL_HINT[level] || LEVEL_HINT.A1}), Thema "${topic}".`,
+    `Alltagsnah und natürlich, aufsteigend von kurz zu etwas länger. Achte auf typische Ausspracheschwierigkeiten (sj-Laut, tj/k vor hellen Vokalen, langes/kurzes a, å/ä/ö, stumme Buchstaben wie in "och", "jag", "de").`,
+    `"tip_de": ein kurzer Aussprachetipp auf Deutsch zu einem Wort im Satz (z. B. "sju klingt etwa wie ‚chü‘"), oder leer.`,
+    jsonOnly(`{"sentences": [{"sv": "Jag heter Anna.", "de": "Ich heiße Anna.", "tip_de": "jag spricht man ‚ja‘"}]}`),
+  ].join("\n");
+}
+
+export function parseShadow(v) {
+  need(isObj(v), "shadow: not an object");
+  const s = arr(v.sentences)
+    .filter((x) => isObj(x) && str(x.sv))
+    .map((x) => ({ sv: str(x.sv), de: str(x.de), tip_de: str(x.tip_de) }));
+  need(s.length > 0, "shadow: no sentences");
+  return s;
+}

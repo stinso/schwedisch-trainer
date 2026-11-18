@@ -94,6 +94,18 @@ async function steps() {
   await wait(300);
   log.push("listen graded: " + text());
 
+  location.hash = "speak";
+  (await until("#view .topic")).click();
+  await wait(400);
+  await click("Nachsprechen");
+  await click("Fertig");
+  await wait(300);
+  log.push("shadow: " + text());
+  await click("Weiter");
+  await click("Weiter");
+  await wait(400);
+  log.push("shadow end: " + text());
+
   location.hash = "progress";
   await wait(400);
   log.push("progress: " + text());

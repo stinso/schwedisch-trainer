@@ -102,3 +102,10 @@ test("howToSay returns parsed sv on quick tier", async () => {
 test("refused gets its own message, not a connection problem", () => {
   assert.equal(aiErrorMessage({ code: "refused" }), "Claude hat das abgelehnt – formuliere es anders.");
 });
+
+test("shadow returns parsed sentences, uncached", async () => {
+  const s = fakeSample({ json: { sentences: [{ sv: "Hej!", de: "Hallo!" }] } });
+  const r = await createAI(s).shadow("A1", "Café");
+  assert.equal(r[0].sv, "Hej!");
+  assert.equal(s.calls[0].opts.cache, false);
+});

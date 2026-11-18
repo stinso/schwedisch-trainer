@@ -17,6 +17,7 @@ sample.json = async (p) => {
   if (/Verständnisfragen/.test(p)) return [{ correct: true, feedback_de: "Genau." }];
   if (/Einstufungstests/.test(p)) return { level: "A2", reason_de: "Solide Grundlagen." };
   if (/Erwartete Antwort/.test(p)) return { correct: false, feedback_de: "Fast." };
+  if (/zum Nachsprechen/.test(p)) return { sentences: [{ sv: "Jag bor och jobbar i Malmö.", de: "Ich wohne und arbeite in Malmö.", tip_de: "och spricht man ‚ock‘" }, { sv: "Hej då!", de: "Tschüss!" }] };
   if (/möchte Folgendes sagen/.test(p)) return { sv: "Jag missade tåget.", note_de: "" };
   return { ok: false, corrected: "Jag gick till stranden.", natural: "Jag var på stranden.", explanation_de: "gå → gick" };
 };

@@ -10,8 +10,9 @@ import * as placement from "./views/placement.js";
 import * as talk from "./views/conversation.js";
 import * as listen from "./views/listening.js";
 import * as review from "./views/review.js";
+import * as speak from "./views/shadowing.js";
 
-const VIEWS = { today, progress, placement, talk, listen, review };
+const VIEWS = { today, progress, placement, talk, listen, speak, review };
 const root = document.getElementById("view");
 
 async function use(name) {

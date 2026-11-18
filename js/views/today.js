@@ -49,7 +49,8 @@ export function render(root, ctx) {
     plan.append(
       step("🔁", "Wiederholen", due ? `${due} ${due === 1 ? "Eintrag ist" : "Einträge sind"} fällig · ca. ${Math.max(2, Math.ceil(Math.min(due, 20) / 3))} Min.` : "Nichts fällig – neue Wörter kommen aus deinen Gesprächen.", did("review") || !due, () => ctx.go("review"), due ? "Starten" : "Ansehen"),
       step("🗣️", "Gespräch zu einem Thema", "Sprechen, ✏️ bei Bedarf, Auswertung am Ende · ca. 10 Min.", did("conversation"), () => ctx.go("talk"), did("conversation") ? "Noch eins" : "Starten"),
-      step("🎧", "Hörübung", "Kurzer Dialog + Verständnisfragen · ca. 5 Min.", did("listening"), () => ctx.go("listen"), did("listening") ? "Noch eine" : "Starten")
+      step("🎧", "Hörübung", "Kurzer Dialog + Verständnisfragen · ca. 5 Min.", did("listening"), () => ctx.go("listen"), did("listening") ? "Noch eine" : "Starten"),
+      step("🗨️", "Nachsprechen", "Sätze hören, nachsprechen, Aussprache prüfen · ca. 5 Min.", did("speaking"), () => ctx.go("speak"), did("speaking") ? "Nochmal" : "Starten")
     );
 
     const weekRow = h("div", { class: "week" });

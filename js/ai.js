@@ -34,6 +34,9 @@ export function createAI(sample) {
     checkReview: (item, answer) =>
       json(P.reviewCheckPrompt(item, answer), { modelTier: "quick" }, P.parseReviewCheck),
 
+    shadow: (level, topic) =>
+      json(P.shadowPrompt(level, topic), { modelTier: "default", cache: false }, P.parseShadow),
+
     howToSay: (level, topic, de) =>
       json(P.howToSayPrompt(level, topic, de), { modelTier: "quick" }, P.parseHowToSay),
   };
