@@ -1,0 +1,49 @@
+// Thin wrapper around the `sample` capability: one function per Claude task.
+import * as P from "./prompts.js";
+
+export function createAI(sample) {
+  const available = typeof sample === "function";
+  const json = async (prompt, opts, parse) => parse(await sample.json(prompt, opts));
+
+  return {
+    available,
+
+    async reply(level, topic, history, { onText, signal } = {}) {
+      const { text } = await sample(P.conversationInput(level, topic, history), {
+        modelTier: "quick",
+        cache: false,
+        onText,
+        signal,
+      });
+      return text.trim();
+    },
+
+    correct: (level, prev, userText) =>
+      json(P.correctionPrompt(level, prev, userText), { modelTier: "quick" }, P.parseCorrection),
+
+    evaluate: (level, topic, history) =>
+      json(P.evaluationPrompt(level, topic, history), { modelTier: "default", cache: false }, P.parseEvaluation),
+
+    listening: (level, topic) =>
+      json(P.listeningPrompt(level, topic), { modelTier: "default", cache: false }, P.parseListening),
+
+    place: (responses) => json(P.placementPrompt(responses), { modelTier: "default" }, P.parsePlacement),
+
+    grade: (items) => json(P.gradePrompt(items), { modelTier: "quick" }, (v) => P.parseGrades(v, items.length)),
+
+    checkReview: (item, answer) =>
+      json(P.reviewCheckPrompt(item, answer), { modelTier: "quick" }, P.parseReviewCheck),
+  };
+}
+
+export function aiErrorMessage(err) {
+  const code = err?.code;
+  if (code === "cancelled") return "";
+  if (code === "not_granted" || code === "sampling_disabled" || code === "not_declared")
+    return "Claude ist für diese Seite nicht freigegeben.";
+  if (code === "rate_limited") return "Gerade zu viele Anfragen – bitte kurz warten.";
+  if (code === "invalid_json" || code === "parse_error" || code === "empty_completion" || err instanceof P.ParseError)
+    return "Antwort war unvollständig – nochmal versuchen.";
+  if (code === "session_expired") return "Bitte bei claude.ai neu anmelden.";
+  return "Verbindungsproblem – nochmal versuchen.";
+}
